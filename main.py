@@ -1,21 +1,26 @@
 from simulation import pcb_process
-from database import DatabaseManager
+from setup import setup_pcb, setup_measurements, setup_strategies
+from db_manager import DatabaseManager
 import simpy
 
 def main_function():
-    import simpy
-    from database import DatabaseManager
-    from simulation import pcb_process
+    # Database setup
+    db = DatabaseManager("pcb_simulation.db")
 
-    db = DatabaseManager()
+    # Initial setup
+    pcb_list = setup_pcb()
+    measurements = setup_measurements()
+    strategies = setup_strategies()
+
+    # Simulation environment
     env = simpy.Environment()
 
-    # Launch processes for multiple PCBs
-    for _ in range(3):  # Simulate 3 PCBs
-        env.process(pcb_process(env, db))
+    # Process for each PCB
+    for pcb in pcb_list:
+        env.process(pcb_process(env, pcb, measurements, strategies, db))
 
+    # Simulation run
     env.run()
-    print("Simulation completed. Data has been saved to the database.")
 
 if __name__ == "__main__":
     main_function()

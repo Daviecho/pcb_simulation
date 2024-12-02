@@ -1,17 +1,13 @@
 class Measurement:
-    def __init__(self, idMeasurement, nameMeasurement):
-        self.idMeasurement = idMeasurement
-        self.nameMeasurement = nameMeasurement
-        self.accuracies = {}
-        self.cost = 0
-
-    def set_accuracy(self, defect_name, accuracy):
-        """Sets the accuracy of this test for a specific defect."""
-        if 0 <= accuracy <= 1:
-            self.accuracies[defect_name] = accuracy
-        else:
-            raise ValueError("Accuracy must be between 0 and 1.")
+    def __init__(self, idMeasurement, nameMeasurement, accuracy, duration, cost):
+        self.idMeasurement = idMeasurement  # Identificatore univoco del test
+        self.nameMeasurement = nameMeasurement  # Nome del test
+        self.accuracy = accuracy  # Dizionario con l'accuratezza per ciascun difetto
+        self.duration = duration  # Durata del test
+        self.cost = cost  # Costo del test
 
     def get_accuracy(self, defect_name):
-        """Returns the accuracy of the test for a specific defect."""
-        return self.accuracies.get(defect_name, 0)
+        """
+        Restituisce l'accuratezza del test per un certo difetto.
+        """
+        return self.accuracy.get(defect_name, 0)
