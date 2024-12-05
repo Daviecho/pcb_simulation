@@ -1,53 +1,35 @@
 class Decision_System:
     def __init__(self, actions, pcb):
-        self.actions = actions  # Lista delle azioni disponibili (test e strategie)
+        self.actions = actions
         self.pcb = pcb
-        self.observed_state = self.get_observed_state()
-        self.executed_tests = set()
+        self.executed_tests = []
 
-    def get_observed_state(self):
-        """
-        Restituisce lo stato osservato attuale della PCB.
-        """
-        observed_state = {}
-        for component in self.pcb.components:
-            observed_state[component.idComponent] = component.defect_probabilities
-        return observed_state
-
+    # Select the next action with the higher decision value
     def select_next_action(self):
-        """
-        Seleziona l'azione migliore tra quelle disponibili.
-        """
         best_action = None
-        best_value = float("-inf")
+        max_value = float("-inf")
 
         for action in self.actions:
-            # Salta i test già eseguiti
             if action.action_type == "test" and action.target.name in self.executed_tests:
-                continue
-
-            value = self.calculate_decision_value(action)
-            if value > best_value:
-                best_value = value
+                continue  # Skips the measurements already executed
+            decision_value = self.calculate_decision_value(action)
+            if decision_value > max_value:
+                max_value = decision_value
                 best_action = action
 
         if best_action and best_action.action_type == "test":
-            self.executed_tests.add(best_action.target.name)
-
+            self.executed_tests.append(best_action.target.name)
         return best_action
 
+    # Decision value logic
     def calculate_decision_value(self, action):
-        """
-        Calcola il valore decisionale di una data azione.
-        """
+        total_value = 0
         if action.action_type == "test":
-            return -action.target.cost  # Valore semplice basato sul costo del test
+            for component in self.pcb.real_state.values():
+                for defect_name, probability in component.items():
+                    total_value += action.target.get_accuracy(defect_name) * (probability - action.cost)
         elif action.action_type == "strategy":
-            return action.target.income - action.target.cost  # Profitto netto della strategia
-        return float("-inf")
+            total_value = action.target.income - action.target.cost
+        return total_value
 
-    def update_observed_state(self, new_state):
-        """
-        Aggiorna lo stato osservato con un nuovo stato.
-        """
-        self.observed_state = new_state
+
