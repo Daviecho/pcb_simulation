@@ -1,33 +1,35 @@
-import json
 from decision_system import Decision_System
 
 def pcb_process(env, pcb, measurements, strategies, db):
-    decision_system = Decision_System(measurements, pcb, strategies)
-    total_time = 0
-
+    decision_system = Decision_System(measurements, strategies, pcb)
     print(f"[{env.now}] Starting process for PCB {pcb.idPCB}")
-    
-    # Iterazione per il processo decisionale
-    while True:
-        result = decision_system.process_decision()  # Ottiene un'azione alla volta
 
-        # Se è stata scelta una strategia, termina il processo
-        if result["strategy"] is not None:
-            print(f"[{env.now}] Strategy chosen: {result['strategy']}")
-            total_time += sum([m.duration for m in measurements if m.nameMeasurement in result["test_sequence"]])
+    test_sequence = []
+    total_time = 0
+    chosen_strategy = None
+
+    while True:
+        next_action = decision_system.select_next_action()
+        if not next_action:
+            print("[Error] No valid action found!")
             break
 
-        # Esegui l'azione restituita (un test)
-        action = result["action"]
-        print(f"[{env.now}] Executed test: {action.target.name}")
-        yield env.timeout(action.duration)  # Simula il ritardo del test
+        if next_action.action_type == "test":
+            result = next_action.execute(decision_system.observed_state, pcb)
+            decision_system.update_observed_state(result["observed_state"])
+            test_sequence.append(next_action.target.name)
+            yield env.timeout(next_action.duration)
+            total_time += next_action.duration
 
-    # Salva i risultati nel database
+        elif next_action.action_type == "strategy":
+            chosen_strategy = next_action.target.name
+            break
+
     db.insert_test_result(
         pcb.idPCB,
-        ','.join(result["test_sequence"]),
-        result["strategy"],
+        ','.join(test_sequence),
+        chosen_strategy,
         total_time,
-        result["income"]
+        decision_system.calculate_decision_value(next_action)
     )
     print(f"[{env.now}] Results saved for PCB {pcb.idPCB}")
