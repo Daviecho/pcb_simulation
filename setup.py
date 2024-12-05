@@ -1,6 +1,7 @@
 from pcb import PCB, Component
 from measurement import Measurement
 from strategy import Strategy
+from action import Action
 
 def setup_pcb():
     pcb_list = []
@@ -31,3 +32,14 @@ def setup_strategies():
         Strategy(2, "Repair", cost=40, income=-150),
         Strategy(3, "Recycle", cost=10, income=-50)
     ]
+
+def setup_actions(measurements, strategies):
+    """
+    Crea una lista di azioni basate su misure e strategie.
+    """
+    actions = [
+        Action("test", measurement, measurement.cost, measurement.duration) for measurement in measurements
+    ] + [
+        Action("strategy", strategy, strategy.cost, 0) for strategy in strategies
+    ]
+    return actions
