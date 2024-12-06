@@ -20,9 +20,6 @@ class Action:
             return {"income": self.target.income - self.target.cost}
 
     def xray(self, real_state):
-        """
-        Metodo specifico per simulare l'azione di X-Ray.
-        """
         observed_state = {}
         for component_id, defects in real_state.items():
             observed_state[component_id] = {}
@@ -37,9 +34,6 @@ class Action:
         return {"observed_state": observed_state, "cost": self.target.cost}
 
     def visual_inspection(self, real_state):
-        """
-        Metodo specifico per simulare l'azione di Visual Inspection.
-        """
         observed_state = {}
         for component_id, defects in real_state.items():
             observed_state[component_id] = {}
@@ -52,9 +46,6 @@ class Action:
         return {"observed_state": observed_state, "cost": self.target.cost}
 
     def flying_probe(self, real_state):
-        """
-        Metodo specifico per simulare l'azione di Flying Probe.
-        """
         observed_state = {}
         for component_id, defects in real_state.items():
             observed_state[component_id] = {}

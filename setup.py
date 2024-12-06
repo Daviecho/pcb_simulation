@@ -38,9 +38,6 @@ def setup_strategies():
 
 # Creating the actions as a list comprohension (cointaining both measurements and strategies)
 def setup_actions(measurements, strategies):
-    """
-    Crea una lista di azioni basate su misure e strategie.
-    """
     actions = [
         Action("test", measurement, measurement.cost, measurement.duration) for measurement in measurements
     ] + [

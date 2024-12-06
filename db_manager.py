@@ -21,9 +21,6 @@ class DatabaseManager:
         self.conn.commit()
 
     def insert_test_result(self, test_sequence, strategy_used, total_time, profit):
-        """
-        Inserisce un nuovo risultato nella tabella Test_Results.
-        """
         cursor = self.conn.cursor()
         cursor.execute("""
             INSERT INTO Test_Results (test_sequence, strategy_used, total_time, profit)
@@ -32,9 +29,6 @@ class DatabaseManager:
         self.conn.commit()
 
     def fetch_all_results(self):
-        """
-        Recupera tutti i record dalla tabella Test_Results.
-        """
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM Test_Results")
         return cursor.fetchall()

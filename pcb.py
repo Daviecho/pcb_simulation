@@ -7,18 +7,12 @@ class PCB:
         self.current_profit = 0
 
     def initialize_real_state(self):
-        """
-        Inizializza il real_state basato sui componenti della PCB.
-        """
         real_state = {}
         for component in self.components:
             real_state[component.idComponent] = component.defect_probabilities
         return real_state
 
     def update_real_state(self, observed_state):
-        """
-        Aggiorna il real_state della PCB con il nuovo observed_state.
-        """
         self.real_state = observed_state
 
 class Component:
