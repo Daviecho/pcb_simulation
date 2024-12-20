@@ -17,6 +17,7 @@ class PCB:
         self.idPCB = idPCB
         self.PCBTypeName = PCBTypeName
         self.components = components  # Lista di componenti
+        self.income = 0
 
     def add_component(self, component):
         self.components.append(component)

@@ -12,6 +12,9 @@ def main_function():
     measurements = setup_measurements()
     strategies = setup_strategies()
 
+    #create actions here! or call an action to cretae all possible actions
+    
+
     # Simulation environment
     env = simpy.Environment()
 

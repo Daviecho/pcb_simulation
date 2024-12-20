@@ -43,13 +43,17 @@ class Action:
                 key_parts.append(f"{component_id}:{defect_name}:{value}")
         return ",".join(sorted(key_parts))
 
-    def execute(self, observed_state, pcb):
+
+#apply cost to PCB!
+    def execute(self, state, pcb):
         """
         Simula l'esecuzione dell'azione.
         """
+        pcb.income += -self.cost
+        
         if self.action_type == "test":
             # Simula un risultato per il test
-            new_observed_state = observed_state.copy()
+            new_observed_state = state.copy()
             for component_id, defects in new_observed_state.items():
                 for defect_name in defects.keys():
                     # Aggiorna lo stato con probabilità semplificate
@@ -57,4 +61,4 @@ class Action:
             return {"observed_state": new_observed_state}
         elif self.action_type == "strategy":
             # Restituisci il risultato della strategia
-            return {"observed_state": observed_state, "income": self.target.income - self.target.cost}
+            return {"observed_state": state, "income": self.target.income - self.target.cost}
