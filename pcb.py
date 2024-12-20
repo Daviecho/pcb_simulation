@@ -1,24 +1,25 @@
-class Component:
-    def __init__(self, idComponent, defect_probabilities, componentTypeName="", state="noDefect"):
-        self.idComponent = idComponent
-        self.defect_probabilities = defect_probabilities  # Dizionario delle probabilità di difetti
-        self.componentTypeName = componentTypeName  # Tipo del componente
-        self.state = state  # Stato del componente (es. defect, noDefect)
-
-
-    def update_state(self, observed_state):
-        """
-        Updates the observed state of the component based on a test result.
-        """
-        self.observed_state = observed_state
-
 class PCB:
-    def __init__(self, idPCB, PCBTypeName, components):
+    def __init__(self, idPCB, PCBTypeName, components, real_state = None):
         self.idPCB = idPCB
         self.PCBTypeName = PCBTypeName
-        self.components = components  # Lista di componenti
-        self.income = 0
+        self.components = components
+        self.real_state = real_state if real_state else self.initialize_real_state()
+        self.current_profit = 0
 
-    def add_component(self, component):
-        self.components.append(component)
+    def initialize_real_state(self):
+        real_state = {}
+        for component in self.components:
+            real_state[component.idComponent] = component.defect_probabilities
+        return real_state
+
+    def update_real_state(self, observed_state):
+        self.real_state = observed_state
+
+class Component:
+    def __init__(self, idComponent, componentTypeName, state, defect_probabilities):
+        self.idComponent = idComponent
+        self.componentTypeName = componentTypeName
+        self.state = state
+        self.defect_probabilities = defect_probabilities
+
 

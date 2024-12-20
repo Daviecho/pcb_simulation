@@ -1,63 +1,35 @@
-from action import Action
-
 class Decision_System:
-    def __init__(self, measurements, pcb, strategies):
-        self.measurements = measurements
+    def __init__(self, actions, pcb):
+        self.actions = actions
         self.pcb = pcb
-        self.strategies = strategies
-        self.executed_tests = set()  # Traccia i test già eseguiti
+        self.executed_tests = []
 
-    def process_decision(self):
-        """
-        Itera sul processo decisionale per determinare la sequenza di test e la strategia finale.
-        """
-        observed_state = self.get_observed_state()
-        test_sequence = []
-        max_iterations = 20
-        iteration = 0
+    # Select the next action with the higher decision value
+    def select_next_action(self):
+        best_action = None
+        max_value = float("-inf")
 
-        while iteration < max_iterations:
-            iteration += 1
-            print(f"Iteration {iteration}, Observed state: {observed_state}")
+        for action in self.actions:
+            if action.action_type == "test" and action.target.name in self.executed_tests:
+                continue  # Skips the measurements already executed
+            decision_value = self.calculate_decision_value(action)
+            if decision_value > max_value:
+                max_value = decision_value
+                best_action = action
 
-            # Richiedi la prossima azione
-            action = Action.decide_next_action(
-                observed_state,
-                self.measurements,
-                self.strategies,
-                executed_tests=self.executed_tests
-            )
+        if best_action and best_action.action_type == "test":
+            self.executed_tests.append(best_action.target.name)
+        return best_action
 
-            if action.action_type == "test":
-                # Esegui il test e aggiorna lo stato osservato
-                result = action.execute(observed_state, self.pcb)
-                observed_state = result["observed_state"]
-                test_sequence.append(action.target.nameMeasurement)
-                self.executed_tests.add(action.target.nameMeasurement)  # Segna il test come eseguito
-                print(f"Executed test: {action.target.nameMeasurement}")
-            elif action.action_type == "strategy":
-                print(f"Strategy chosen: {action.target.name}")
-                return {
-                    "test_sequence": test_sequence,
-                    "strategy": action.target.name,
-                    "income": result.get("income", 0)
-                }
-
-        print("Max iterations reached. Defaulting to 'NoStrategy'.")
-        return {
-            "test_sequence": test_sequence,
-            "strategy": "NoStrategy",
-            "income": 0
-        }
+    # Decision value logic
+    def calculate_decision_value(self, action):
+        total_value = 0
+        if action.action_type == "test":
+            for component in self.pcb.real_state.values():
+                for defect_name, probability in component.items():
+                    total_value += action.target.get_accuracy(defect_name) * (probability - action.cost)
+        elif action.action_type == "strategy":
+            total_value = action.target.income - action.target.cost
+        return total_value
 
 
-
-
-    def get_observed_state(self):
-        """
-        Restituisce lo stato osservato attuale della PCB.
-        """
-        observed_state = {}
-        for component in self.pcb.components:
-            observed_state[component.idComponent] = component.defect_probabilities
-        return observed_state
