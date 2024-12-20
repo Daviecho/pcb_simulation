@@ -9,7 +9,7 @@ def main_function():
 
     # Setup PCB, Measurements, Strategies and actions
     pcb_list = setup_pcb()
-    measurements = setup_measurements()
+    measurements = setup_measurements(env)
     strategies = setup_strategies()
     actions = setup_actions(measurements, strategies)
 

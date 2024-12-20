@@ -1,3 +1,4 @@
+from measurements.xray import xray
 from pcb import PCB, Component
 from measurement import Measurement
 from strategy import Strategy
@@ -11,8 +12,7 @@ def setup_pcb():
             Component(
                 idComponent=j + 1,
                 componentTypeName=f"Type_{j + 1}",
-                state="noDefect",
-                defect_probabilities={"solder": 0.5, "leg": 0.3, "burned": 0.2}
+                state_probabilities={"solder": 0.4, "leg": 0.3, "burned": 0.2, "noDefect": 0.1}
             )
             for j in range(5)
         ]  
@@ -21,11 +21,12 @@ def setup_pcb():
     return pcb_list
 
 # Creating 3 measurements, specifying the accuracy for each kind of issue
-def setup_measurements():
+def setup_measurements(env):
+    #instantiate all specific measurements like x-ray, visual inspection, flying probe instead of generic measurement
     return [
-        Measurement(1, "X-Ray", {"solder": 0.9, "leg": 0.8, "burned": 0.7}, duration=5, cost=10),
-        Measurement(2, "Visual Inspection", {"solder": 0.7, "leg": 0.6, "burned": 0.4}, duration=3, cost=5),
-        Measurement(3, "Flying Probe", {"solder": 0.95, "leg": 0.9, "burned": 0.85}, duration=7, cost=15)
+        xray(1, "X-Ray", {"solder": 0.9, "leg": 0.8, "burned": 0.7}, duration=5, cost=10, env=env),
+        Measurement(2, "Visual Inspection", {"solder": 0.7, "leg": 0.6, "burned": 0.4}, duration=3, cost=5, env=env),
+        Measurement(3, "Flying Probe", {"solder": 0.95, "leg": 0.9, "burned": 0.85}, duration=7, cost=15, env=env)
     ]
 
 
@@ -37,7 +38,7 @@ def setup_strategies():
     ]
 
 # Creating the actions as a list comprohension (cointaining both measurements and strategies)
-def setup_actions(measurements, strategies):
+def setup_actions(measurements, strategies):    
     actions = [
         Action("test", measurement, measurement.cost, measurement.duration) for measurement in measurements
     ] + [

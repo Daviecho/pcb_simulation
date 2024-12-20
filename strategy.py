@@ -4,3 +4,6 @@ class Strategy:
         self.name = name
         self.cost = cost
         self.income = income
+        
+    def execute(self, pcb):
+        return print("Test")
