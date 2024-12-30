@@ -3,7 +3,8 @@ import sqlite3
 
 class DatabaseManager:
     def __init__(self, db_name="database.db"):
-        self.conn = sqlite3.connect(db_name)
+        self.db_name = db_name
+        self.conn = sqlite3.connect(":memory:")  # Use in-memory database
         self.create_tables()
 
     def create_tables(self):
@@ -35,4 +36,7 @@ class DatabaseManager:
         return cursor.fetchall()
 
     def close(self):
+        # Save in-memory database to disk
+        with sqlite3.connect(self.db_name) as disk_conn:
+            self.conn.backup(disk_conn)
         self.conn.close()

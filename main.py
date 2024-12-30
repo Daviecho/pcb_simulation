@@ -9,6 +9,8 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
+from datetime import datetime
+import os
 
 def plot_learning_curve(rewards, window=100):
     """
@@ -37,7 +39,8 @@ def main_function():
     # Initialize SimPy environment and database manager
     env = simpy.Environment()
     db = DatabaseManager()
-    writer = SummaryWriter('runs/rl_agent_training')
+    run_name = f"run_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    writer = SummaryWriter(os.path.join('runs', run_name))
 
     # Setup Measurements, Strategies, and Actions once
     measurements = setup_measurements(env)  # 'env' is now defined
@@ -92,7 +95,7 @@ def main_function():
     torch.save(agent.policy_net.state_dict(), "dqn_agent.pth")
 
     # Plot the learning curve
-    plot_learning_curve(rewards)
+    #plot_learning_curve(rewards)
 
 if __name__ == "__main__":
     main_function()

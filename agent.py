@@ -1,4 +1,3 @@
-# agent.py
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -27,13 +26,15 @@ class ReplayBuffer:
         return len(self.buffer)
 
 class DQNAgent:
-    def __init__(self, node_feature_dim, hidden_dim, output_dim, lr=1e-3, gamma=0.99, buffer_capacity=10000, batch_size=64, writer=None,):
+    def __init__(self, node_feature_dim, hidden_dim, output_dim, writer=None, 
+                 lr=1e-4, gamma=0.99, buffer_capacity=50000, batch_size=128, 
+                 epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=5000):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.policy_net = GNNModel(node_feature_dim, hidden_dim, output_dim).to(self.device)
         self.target_net = GNNModel(node_feature_dim, hidden_dim, output_dim).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
-        self.writer = writer # TensorBoard writer
+
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=lr)
         self.criteria = nn.MSELoss()
 
@@ -42,9 +43,11 @@ class DQNAgent:
         self.gamma = gamma
 
         self.steps_done = 0
-        self.epsilon_start = 1.0
-        self.epsilon_end = 0.05
-        self.epsilon_decay = 1000
+        self.epsilon_start = epsilon_start
+        self.epsilon_end = epsilon_end
+        self.epsilon_decay = epsilon_decay
+
+        self.writer = writer  # TensorBoard writer
 
     def select_action(self, state, available_actions):
         epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
@@ -52,16 +55,19 @@ class DQNAgent:
         self.steps_done += 1
 
         if random.random() < epsilon:
-            return random.choice(available_actions)
+s t            action = random.choice(available_actions)
         else:
             with torch.no_grad():
                 data = self.prepare_data(state)
                 q_values = self.policy_net(data)
-                # Mask unavailable actions
-                q_values = q_values.cpu().numpy()
-                available_q = [q_values[0][action] for action in available_actions]
+                q_values = q_values.cpu().numpy()[0]
+                available_q = q_values[available_actions]
                 best_action_idx = np.argmax(available_q)
-                return available_actions[best_action_idx]
+                action = available_actions[best_action_idx]
+
+        if self.writer:
+            self.writer.add_scalar('Policy/Epsilon', epsilon, self.steps_done)
+        return action
 
     def prepare_data(self, state):
         """
@@ -103,6 +109,7 @@ class DQNAgent:
 
         if self.writer:
             self.writer.add_scalar('Loss/train', loss.item(), self.steps_done)
+            self.writer.add_scalar('Q-Values/Average Q-Value', state_action_values.mean().item(), self.steps_done)
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -111,3 +118,6 @@ class DQNAgent:
 
     def update_target_network(self):
         self.target_net.load_state_dict(self.policy_net.state_dict())
+
+        if self.writer:
+            self.writer.add_scalar('Network/Target Network Updates', 1, self.steps_done)
