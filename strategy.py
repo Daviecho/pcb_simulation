@@ -15,7 +15,7 @@ class Strategy:
         """
         # For simplicity, assume strategies always succeed
         # You can introduce probabilities for success/failure
-
+        profit = 0
         # Example logic:
         if self.name == "Reuse":
             # Reuse components if they are not broken

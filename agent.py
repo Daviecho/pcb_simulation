@@ -48,6 +48,7 @@ class DQNAgent:
         self.epsilon_decay = epsilon_decay
 
         self.writer = writer  # TensorBoard writer
+        self.action_rewards = {action: [] for action in range(output_dim)}  # Track rewards per action
 
     def select_action(self, state, available_actions):
         epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
