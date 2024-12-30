@@ -1,3 +1,4 @@
+# db_manager.py
 import sqlite3
 
 class DatabaseManager:
@@ -8,7 +9,7 @@ class DatabaseManager:
     def create_tables(self):
         cursor = self.conn.cursor()
 
-        # Tabella Test_Results con pcb_id AUTOINCREMENT
+        # Table Test_Results with pcb_id AUTOINCREMENT
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Test_Results (
                 pcb_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,3 +33,6 @@ class DatabaseManager:
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM Test_Results")
         return cursor.fetchall()
+
+    def close(self):
+        self.conn.close()

@@ -1,48 +1,70 @@
+# simulation.py
+import simpy
 from decision_system import Decision_System
+from agent import DQNAgent
+import random
+import torch
 
-def pcb_process(env, pcb, actions, db):
-    decision_system = Decision_System(actions, pcb)
+def pcb_process(env, pcb, actions, db, decision_system, agent, device, rewards, max_actions=100):
     total_time = 0
     test_sequence = []
+    done = False
+    cumulative_reward = 0
+    while not done:
+        # Determine available actions
+        available_actions = []
+        # Avoid repeating the same measurement
+        executed_tests = [action.target.name for action in actions if action.action_type == "test" and action.target.name in test_sequence]
+        for idx, action in enumerate(actions):
+            if action.action_type == "test" and action.target.name in executed_tests:
+                continue
+            available_actions.append(idx)
 
-    print(f"[{env.now}] Starting process for PCB {pcb.idPCB}")
+        # Select a test action using the agent
+        action_idx = decision_system.select_next_action(pcb, available_actions)
+        action = actions[action_idx]
+        test_sequence.append(action.target.name)
+        available_actions.remove(action_idx)
 
-    while True:
-        next_action = decision_system.select_next_action()
-        #next action is executed; action executes with reference to measurement or strategy. 
-        # but measurement is generic type, so inr eal you have an instance of a specific measurement where you call execute. 
-        # All the changes to the pcb are done within execute
+        state = pcb.clone()
 
-        
-        if not next_action:
-            print(f"[{env.now}] No more valid actions for PCB {pcb.idPCB}")
-            break
+        # Execute the test
+        print(f"[{env.now}] PCB {pcb.idPCB} executing action {action.target.name}")
+        result = yield env.process(action.execute(pcb, env))
 
-        if next_action.action_type == "test":
-            measurement = next_action.target
-            print(f"[{env.now}] PCB {pcb.idPCB} waiting for measurement {measurement.name}")
-            
-            # Simulate the measurement
-            # result = yield env.process(measurement.measure(env, pcb))
-            
-            # pcb.real_state = result.get("observed_state", pcb.real_state)
-            pcb.current_profit -= result.get("cost", 0)
-
-            test_sequence.append(measurement.name)
-            total_time += measurement.duration
-
-        elif next_action.action_type == "strategy":
-            result = next_action.execute(pcb.real_state)
+        # Update profit
+        reward = 0
+        total_time += action.duration
+        if action.action_type == "strategy":
             pcb.current_profit += result.get("income", 0)
-
-            print(f"[{env.now}] Strategy chosen: {next_action.target.name}")
-
             db.insert_test_result(
-                ','.join(test_sequence),
-                next_action.target.name if next_action.action_type == "strategy" else "NoStrategy",
-                total_time,
-                pcb.current_profit
-            )
-            break
+                    ','.join(test_sequence),
+                    action.target.name,
+                    total_time,
+                    pcb.current_profit
+                )
+            done = True
+            reward = result.get("income", 0)
+        else:
+            pcb.current_profit -= result.get("cost", 0)   
+            reward = -result.get("cost", 0)       
 
-    print(f"[{env.now}] Decision process completed for PCB {pcb.idPCB}")
+
+        # For RL, collect transition and store in replay buffer
+        # Define reward as profit change
+        # Since profit is updated, define reward accordingly
+        # Here, as a simple example, reward is profit after action - previous profit
+
+        # In practice, more sophisticated reward shaping can be applied
+        # For demonstration, using -cost as immediate reward
+        cumulative_reward += reward
+        next_state = pcb.clone()
+        done_flag = done
+        agent.replay_buffer.push(state, action_idx, reward, next_state, done_flag)
+
+        # Optimize the agent
+        agent.optimize_model()
+        rewards.append(cumulative_reward)
+
+    print(f"[{env.now}] PCB {pcb.idPCB} processing completed. Total Profit: {pcb.current_profit}")
+    return cumulative_reward

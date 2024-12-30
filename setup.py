@@ -1,44 +1,90 @@
-from measurements.xray import xray
+# setup.py
+import random
 from pcb import PCB, Component
-from measurement import Measurement
+from measurement import XRay, VisualInspection, FlyingProbe
 from strategy import Strategy
 from action import Action
 
-# Creating 3 PCBs with 5 components each
+def generate_state_probabilities():
+    """
+    Generates a dictionary of defect probabilities that sum to 1.
+
+    Returns:
+        dict: A dictionary with keys 'solder', 'leg', 'burned', 'noDefect' and values summing to 1.
+    """
+    probs = [random.uniform(0, 1) for _ in range(4)]
+    total = sum(probs)
+    return {
+        "solder": probs[0] / total,
+        "leg": probs[1] / total,
+        "burned": probs[2] / total,
+        "noDefect": probs[3] / total
+    }
+
 def setup_pcb():
+    """
+    Sets up a list of 1,000 PCBs with randomized components and defect probabilities.
+
+    Returns:
+        list: A list of PCB instances.
+    """
     pcb_list = []
-    for i in range(3):  
-        components = [
-            Component(
-                idComponent=j + 1,
-                componentTypeName=f"Type_{j + 1}",
-                state_probabilities={"solder": 0.4, "leg": 0.3, "burned": 0.2, "noDefect": 0.1}
+    num_pcb = 1000  # Total number of PCBs to generate
+    min_components = 3  # Minimum number of components per PCB
+    max_components = 10  # Maximum number of components per PCB
+
+    # Define possible component types and PCB types
+    component_types = ["Type_1", "Type_2", "Type_3", "Type_4", "Type_5"]
+    pcb_types = [f"PCB_Type_{i}" for i in range(1, 11)]  # PCB_Type_1 to PCB_Type_10
+
+    for i in range(1, num_pcb + 1):
+        # Randomize the number of components for this PCB
+        num_components = random.randint(min_components, max_components)
+        components = []
+
+        for j in range(1, num_components + 1):
+            # Randomize component type
+            component_type = random.choice(component_types)
+
+            # Generate random defect probabilities
+            state_probabilities = generate_state_probabilities()
+
+            # Create a Component instance
+            component = Component(
+                idComponent=j,
+                componentTypeName=component_type,
+                state_probabilities=state_probabilities
             )
-            for j in range(5)
-        ]  
-        pcb = PCB(i + 1, f"PCB_Type_{i + 1}", components)
+            components.append(component)
+
+        # Randomize PCB type
+        pcb_type = random.choice(pcb_types)
+
+        # Create a PCB instance
+        pcb = PCB(
+            idPCB=i,
+            PCBTypeName=pcb_type,
+            components=components
+        )
         pcb_list.append(pcb)
+
     return pcb_list
 
-# Creating 3 measurements, specifying the accuracy for each kind of issue
 def setup_measurements(env):
-    #instantiate all specific measurements like x-ray, visual inspection, flying probe instead of generic measurement
     return [
-        xray(1, "X-Ray", {"solder": 0.9, "leg": 0.8, "burned": 0.7}, duration=5, cost=10, env=env),
-        Measurement(2, "Visual Inspection", {"solder": 0.7, "leg": 0.6, "burned": 0.4}, duration=3, cost=5, env=env),
-        Measurement(3, "Flying Probe", {"solder": 0.95, "leg": 0.9, "burned": 0.85}, duration=7, cost=15, env=env)
+        XRay(1, "X-Ray", {"solder": 0.9, "leg": 0.8, "burned": 0.7}, duration=5, cost=10, env=env),
+        VisualInspection(2, "Visual Inspection", {"solder": 0.7, "leg": 0.6, "burned": 0.4}, duration=3, cost=5, env=env),
+        FlyingProbe(3, "Flying Probe", {"solder": 0.95, "leg": 0.9, "burned": 0.85}, duration=7, cost=15, env=env)
     ]
-
 
 def setup_strategies():
     return [
-        Strategy(1, "Reuse", cost=20, income=-100),
-        Strategy(2, "Repair", cost=40, income=-150),
-        Strategy(3, "Recycle", cost=10, income=-50)
+        Strategy(1, "Reuse", cost=20, income=100),    # Adjusted income to positive
+        Strategy(2, "Repair", cost=40, income=150),   # Adjusted income to positive
+        Strategy(3, "Recycle", cost=10, income=50)    # Adjusted income to positive
     ]
 
-# Creating the actions as a list comprohension (cointaining both measurements and strategies)
-def setup_actions(measurements, strategies):    
+def setup_actions(measurements, strategies):
     actions = [
         Action("test", measurement, measurement.cost, measurement.duration) for measurement in measurements
     ] + [
