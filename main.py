@@ -54,7 +54,7 @@ def main_function():
     output_dim = len(actions)  # Total number of possible actions
 
     # Initialize the RL agent
-    agent = DQNAgent(node_feature_dim, hidden_dim, output_dim)
+    agent = DQNAgent(node_feature_dim, hidden_dim, output_dim, writer=writer)
     decision_system = Decision_System(agent, actions, None)  # Assuming no GNN model is needed here
 
     num_episodes = 100  # Define number of training episodes
@@ -68,7 +68,7 @@ def main_function():
 
         # Simulate each PCB
         for pcb in pcb_list:
-            env.process(pcb_process(env, pcb, actions, db, decision_system, agent, agent.device, episode_rewards))
+            env.process(pcb_process(env, pcb, actions, db, decision_system, agent, episode_rewards))
 
         # Run the simulation
         env.run()

@@ -5,7 +5,7 @@ from agent import DQNAgent
 import random
 import torch
 
-def pcb_process(env, pcb, actions, db, decision_system, agent, device, rewards, max_actions=100):
+def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_actions=100):
     total_time = 0
     test_sequence = []
     done = False

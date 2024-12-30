@@ -55,7 +55,7 @@ class DQNAgent:
         self.steps_done += 1
 
         if random.random() < epsilon:
-s t            action = random.choice(available_actions)
+            action = random.choice(available_actions)
         else:
             with torch.no_grad():
                 data = self.prepare_data(state)
@@ -107,6 +107,12 @@ s t            action = random.choice(available_actions)
         # Compute loss
         loss = self.criteria(state_action_values.squeeze(), expected_state_action_values)
 
+        # Track rewards for each action
+        for action, reward in zip(action_batch, reward_batch):
+            self.action_rewards[action].append(reward)
+            if self.writer:
+                self.writer.add_scalar(f'Rewards/Action_{action}', np.mean(self.action_rewards[action]), self.steps_done)
+
         if self.writer:
             self.writer.add_scalar('Loss/train', loss.item(), self.steps_done)
             self.writer.add_scalar('Q-Values/Average Q-Value', state_action_values.mean().item(), self.steps_done)
@@ -115,6 +121,19 @@ s t            action = random.choice(available_actions)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        # Log gradients
+        if self.writer:
+            for name, param in self.policy_net.named_parameters():
+                if param.grad is not None:
+                    self.writer.add_histogram(f'Gradients/{name}', param.grad, self.steps_done)
+
+        self.optimizer.step()
+
+        # Log weights
+        if self.writer:
+            for name, param in self.policy_net.named_parameters():
+                self.writer.add_histogram(f'Weights/{name}', param, self.steps_done)
 
     def update_target_network(self):
         self.target_net.load_state_dict(self.policy_net.state_dict())
