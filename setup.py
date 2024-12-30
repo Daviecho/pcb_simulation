@@ -79,9 +79,9 @@ def setup_measurements(env):
 
 def setup_strategies():
     return [
-        Strategy(idStrategy=1, name="Reuse", cost=5.0, income=15.0),
-        Strategy(idStrategy=2, name="Repair", cost=0.0, income=25.0, repair_cost=3.0),  # Higher income
-        Strategy(idStrategy=3, name="Recycle", cost=2.0, income=10.0)
+        Strategy(1, "Reuse", cost=20, income=100),    # Adjusted income to positive
+        Strategy(2, "Repair", cost=5, income=150, repair_cost=3.0),   # Adjusted income to positive
+        Strategy(3, "Recycle", cost=10, income=50)    # Adjusted income to positive
     ]
 
 def setup_actions(measurements, strategies):
