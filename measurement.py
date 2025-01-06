@@ -63,11 +63,11 @@ class Measurement:
             yield self.env.timeout(self.duration)
 
             for component in pcb.components:
-                old_probs = dict(component.observed_state)  # snapshot before update
-                real_defect = component.state
+                # old_probs = dict(component.observed_state)  # snapshot before update
+                # real_defect = component.state
                 detected_defect = self.detect_defect(component)
                 self.partial_update_observed_state(component, detected_defect)
-                self.log_observed_state(pcb, component, old_probs, real_defect, detected_defect)
+                #self.log_observed_state(pcb, component, old_probs, real_defect, detected_defect)
 
         return {
             "observed_state": None,
