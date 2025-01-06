@@ -60,6 +60,7 @@ def main_function():
 
     num_episodes = 100  # Define number of training episodes
     rewards = []
+    stepsInLastEpisode = 0
 
     for episode in range(1, num_episodes + 1):        
         print(f"--- Starting Episode {episode} ---")
@@ -92,6 +93,44 @@ def main_function():
         print(f"Number of PCBs Processed: {len(finished_pcb_list)}")
 
         # Log rewards to TensorBoard
+
+        # Calculate the average length of test_sequence
+        try:
+            total_length = sum(len(pcb['test_sequence']) for pcb in finished_pcb_list)
+            average_length = total_length / len(finished_pcb_list) if finished_pcb_list else 0
+
+            # Log the average length to TensorBoard
+            writer.add_scalar('Average Test Sequence Length', average_length, global_step=1)
+        except Exception as e:
+            print(f"An error occurred during logging Average Test Sequence Length: {e}")
+
+        # Maximum sequence length
+        max_length = 4
+
+        # Calculate the average reward per test sequence length
+        try:
+            # Group rewards by test sequence length
+            length_rewards = {}
+            for pcb in finished_pcb_list:
+                length = len(pcb['test_sequence'])
+                reward = pcb['reward']
+                if length not in length_rewards:
+                    length_rewards[length] = []
+                length_rewards[length].append(reward)
+            
+            # Create a fixed-size array for average rewards (size = max_length)
+            avg_rewards = np.zeros(max_length)
+            for length in range(1, max_length + 1):
+                if length in length_rewards:
+                    avg_rewards[length - 1] = sum(length_rewards[length]) / len(length_rewards[length])
+                else:
+                    avg_rewards[length - 1] = 0  # Or use np.nan for missing lengths
+
+            # Log the array as a histogram for this episode
+            writer.add_histogram('Average Reward per Test Sequence Length', avg_rewards, global_step=episode)
+        except Exception as e:
+            print(f"An error occurred during logging Average Reward per Test Sequence Length: {e}")
+
         try:
             writer.add_scalar('Total Reward per Episode', total_episode_reward, episode)
         except Exception as e:
@@ -122,9 +161,10 @@ def main_function():
         # Log epsilon per step
         for step, epsilon in enumerate(agent.logging_data['epsilon']):
             try:
-                writer.add_scalar(f'Epsilon per Step', epsilon, step)
+                writer.add_scalar(f'Epsilon per Step', epsilon, step + stepsInLastEpisode)
             except Exception as e:
                 print(f"An error occurred during logging Epsilon per Step: {e}")
+        stepsInLastEpisode += len(agent.logging_data['epsilon'])
 
         # Log mean epsilon per episode
         if agent.logging_data['epsilon']:
