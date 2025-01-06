@@ -1,7 +1,7 @@
 # setup.py
 import random
 from pcb import PCB, Component
-from measurement import XRay, VisualInspection, FlyingProbe
+from measurement import Measurement  # Only one class now
 from strategy import Strategy
 from action import Action
 
@@ -70,24 +70,41 @@ def setup_pcb():
 
     return pcb_list
 
-def setup_measurements(env):
+def setup_measurements():
     return [
-        XRay(1, "X-Ray", {"solder": 0.9, "leg": 0.8, "burned": 0.7}, duration=5, cost=10, env=env),
-        VisualInspection(2, "Visual Inspection", {"solder": 0.7, "leg": 0.6, "burned": 0.4}, duration=3, cost=5, env=env),
-        FlyingProbe(3, "Flying Probe", {"solder": 0.95, "leg": 0.9, "burned": 0.85}, duration=7, cost=15, env=env)
+        Measurement(
+            1, 
+            "X-Ray",
+            {"solder": 0.9, "leg": 0.8, "burned": 0.7},
+            duration=5, 
+            cost=10
+        ),
+        Measurement(
+            2, 
+            "Visual Inspection",
+            {"solder": 0.7, "leg": 0.6, "burned": 0.4},
+            duration=3, 
+            cost=5
+        ),
+        Measurement(
+            3, 
+            "Flying Probe",
+            {"solder": 0.95, "leg": 0.9, "burned": 0.85},
+            duration=7, 
+            cost=15
+        ),
     ]
 
 def setup_strategies():
     return [
-        Strategy(1, "Reuse", cost=20, income=100),    # Adjusted income to positive
-        Strategy(2, "Repair", cost=5, income=150, repair_cost=3.0),   # Adjusted income to positive
-        Strategy(3, "Recycle", cost=10, income=50)    # Adjusted income to positive
+        Strategy(1, "Reuse", cost=20, income=1000),    # Adjusted income to positive
+        Strategy(2, "Repair", cost=5, income=1500, repair_cost=3.0),   # Adjusted income to positive
+        Strategy(3, "Recycle", cost=4, income=5)    # Adjusted income to positive
     ]
 
 def setup_actions(measurements, strategies):
-    actions = [
-        Action("test", measurement, measurement.cost, measurement.duration) for measurement in measurements
-    ] + [
-        Action("strategy", strategy, strategy.cost, 0) for strategy in strategies
-    ]
+    # Measurements
+    actions = [Action("test", measurement, measurement.cost, measurement.duration) for measurement in measurements]
+    # Strategies
+    actions += [Action("strategy", strategy, strategy.cost, 0) for strategy in strategies]
     return actions

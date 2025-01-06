@@ -9,7 +9,7 @@ import numpy as np
 from collections import deque
 
 class ReplayBuffer:
-    def __init__(self, capacity=10000):
+    def __init__(self, capacity=1000):
         self.buffer = deque(maxlen=capacity)
 
     def push(self, state, action, reward, next_state, done):
@@ -27,7 +27,7 @@ class ReplayBuffer:
 
 class DQNAgent:
     def __init__(self, node_feature_dim, hidden_dim, output_dim, writer=None, 
-                 lr=1e-4, gamma=0.99, buffer_capacity=50000, batch_size=128, 
+                 lr=1e-4, gamma=0.99, buffer_capacity=1000, batch_size=128, 
                  epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=5000):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.policy_net = GNNModel(node_feature_dim, hidden_dim, output_dim).to(self.device)
@@ -48,12 +48,43 @@ class DQNAgent:
         self.epsilon_decay = epsilon_decay
 
         self.writer = writer  # TensorBoard writer
-        self.action_rewards = {action: [] for action in range(output_dim)}  # Track rewards per action
+
+        self.logging_data = {
+            'action_rewards': {action: [] for action in range(output_dim)},
+            'loss': [],
+            'average_q': [],
+            'gradients': [],
+            'weights': [],
+            'epsilon':[]
+        }
+
+    def accumulate_logging_data(self, action_batch, reward_batch, loss, state_action_values):
+        """Accumulate data for logging."""
+        # Accumulate action-reward data
+        for action, reward in zip(action_batch, reward_batch):
+            self.logging_data['action_rewards'][action].append(reward)
+        
+        # Accumulate loss and Q-values
+        self.logging_data['loss'].append(loss.item())
+        self.logging_data['average_q'].append(state_action_values.mean().item())
+
+                
+        # Accumulate gradients
+        for name, param in self.policy_net.named_parameters():
+            if param.grad is not None:
+                self.logging_data['gradients'].append((name, param.grad.clone().cpu().numpy()))
+
+        # Accumulate weights
+        # for name, param in self.policy_net.named_parameters():
+        #     self.logging_data['weights'].append((name, param.clone().cpu().numpy()))
 
     def select_action(self, state, available_actions):
         epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
                   np.exp(-1. * self.steps_done / self.epsilon_decay)
         self.steps_done += 1
+
+        # Log epsilon
+        self.logging_data['epsilon'].append(epsilon)
 
         if random.random() < epsilon:
             action = random.choice(available_actions)
@@ -65,9 +96,7 @@ class DQNAgent:
                 available_q = q_values[available_actions]
                 best_action_idx = np.argmax(available_q)
                 action = available_actions[best_action_idx]
-
-        if self.writer:
-            self.writer.add_scalar('Policy/Epsilon', epsilon, self.steps_done)
+        
         return action
 
     def prepare_data(self, state):
@@ -78,7 +107,7 @@ class DQNAgent:
         nodes, edges = state.get_graph()
         x = torch.tensor(nodes, dtype=torch.float)
         edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
-        data = Data(x=x, edge_index=edge_index)
+        data = Data(x=x, edge_index=edge_index)        
         return data.to(self.device)
 
     def optimize_model(self):
@@ -108,33 +137,13 @@ class DQNAgent:
         # Compute loss
         loss = self.criteria(state_action_values.squeeze(), expected_state_action_values)
 
-        # Track rewards for each action
-        for action, reward in zip(action_batch, reward_batch):
-            self.action_rewards[action].append(reward)
-            if self.writer:
-                self.writer.add_scalar(f'Rewards/Action_{action}', np.mean(self.action_rewards[action]), self.steps_done)
-
-        if self.writer:
-            self.writer.add_scalar('Loss/train', loss.item(), self.steps_done)
-            self.writer.add_scalar('Q-Values/Average Q-Value', state_action_values.mean().item(), self.steps_done)
+        # Accumulate logging data instead of writing immediately
+        self.accumulate_logging_data(action_batch, reward_batch, loss, state_action_values)
 
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-
-        # Log gradients
-        if self.writer:
-            for name, param in self.policy_net.named_parameters():
-                if param.grad is not None:
-                    self.writer.add_histogram(f'Gradients/{name}', param.grad, self.steps_done)
-
-        self.optimizer.step()
-
-        # Log weights
-        if self.writer:
-            for name, param in self.policy_net.named_parameters():
-                self.writer.add_histogram(f'Weights/{name}', param, self.steps_done)
 
     def update_target_network(self):
         self.target_net.load_state_dict(self.policy_net.state_dict())

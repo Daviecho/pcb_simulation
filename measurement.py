@@ -1,119 +1,80 @@
-# measurement.py
 import random
 import simpy
 
 class Measurement:
-    def __init__(self, idMeasurement, nameMeasurement, accuracy, duration, cost, env, capacity=1):
+    def __init__(self, idMeasurement, nameMeasurement, accuracy, duration, cost, capacity=1):
         self.idMeasurement = idMeasurement
         self.name = nameMeasurement
-        self.accuracy = accuracy  # Dict of defect_name: accuracy
+        self.accuracy = accuracy  # Dict of defect_name -> detection probability
         self.duration = duration
         self.cost = cost
-        self.resource = simpy.Resource(env, capacity=capacity)  # SimPy resource to manage concurrency
+        self.env = None
+        self.capacity = capacity
+
+    def initAsResourceInEnv(self, env):
+        self.resource = simpy.Resource(env, capacity=self.capacity)
         self.env = env
+        
 
     def get_accuracy(self, defect_name):
         return self.accuracy.get(defect_name, 0)
 
-    def execute(self, pcb):
+    def partial_update_observed_state(self, component, detected_defect, alpha=0.3):
         """
-        Executes the measurement on the PCB.
-        Returns observed state and cost.
+        Moves the component's observed_state probabilities slightly toward 'detected_defect'
+        if we detect something, or leaves them if we detect nothing.
         """
-        # This method will be overridden by subclasses if needed
-        raise NotImplementedError("Execute method must be implemented by subclasses.")
+        if detected_defect:
+            # Shift probability distribution
+            for defect in component.observed_state.keys():
+                if defect == detected_defect:
+                    component.observed_state[defect] = min(
+                        1.0, component.observed_state[defect] + alpha
+                    )
+                else:
+                    component.observed_state[defect] = max(
+                        0.0,
+                        component.observed_state[defect] - alpha / (len(component.observed_state) - 1)
+                    )
 
-class XRay(Measurement):
-    def __init__(self, idMeasurement, nameMeasurement, accuracy, duration, cost, env, capacity=1):
-        super().__init__(idMeasurement, nameMeasurement, accuracy, duration, cost, env, capacity)
+    def log_observed_state(self, pcb, component, old_probs, real_defect, detected_defect):
+        """
+        Console logging to show how partial_update_observed_state() changed probabilities.
+        """
+        print(f"[{self.env.now}] {self.name} on PCB {pcb.idPCB}, Component {component.idComponent}")
+        print(f"    Real Defect={real_defect}, Detected={detected_defect}")
+        print(f"    Old ObservedState={old_probs}")
+        print(f"    New ObservedState={component.observed_state}")
 
-    def execute(self, pcb):
-        with self.resource.request() as request:
-            yield request  # Wait for resource
-            yield self.env.timeout(self.duration)  # Simulate measurement duration
+    def detect_defect(self, component):
+        """
+        A simple detection logic: If random < accuracy(real_defect), detect the real defect; else None.
+        False positives could be added if desired.
+        """
+        real_defect = component.state
+        if random.random() < self.get_accuracy(real_defect):
+            return real_defect
+        else:
+            return None
 
-            observed_state = {}
-            for component in pcb.components:
-                for defect, prob in component.state_probabilities.items():
-                    if component.state == defect:
-                        if random.random() < self.get_accuracy(defect):
-                            observed_state[component.idComponent] = defect
-                    else:
-                        # False positive handling can be implemented here
-                        pass  # For simplicity, ignoring false positives
-
-            # Update PCB's observed state based on measurement
-            for component in pcb.components:
-                if component.idComponent in observed_state:
-                    component.observed_state = {k: 0.0 for k in component.observed_state}
-                    component.observed_state[observed_state[component.idComponent]] = 1.0
-
-            result = {
-                "observed_state": observed_state,
-                "cost": self.cost
-            }
-
-            print(f"[{self.env.now}] X-Ray Measurement completed for PCB {pcb.idPCB}")
-            return result
-
-class VisualInspection(Measurement):
-    def __init__(self, idMeasurement, nameMeasurement, accuracy, duration, cost, env, capacity=1):
-        super().__init__(idMeasurement, nameMeasurement, accuracy, duration, cost, env, capacity)
-
-    def execute(self, pcb):
+    def do_measurement(self, pcb):
         with self.resource.request() as request:
             yield request
             yield self.env.timeout(self.duration)
 
-            observed_state = {}
             for component in pcb.components:
-                for defect, prob in component.state_probabilities.items():
-                    if component.state == defect:
-                        if random.random() < self.get_accuracy(defect):
-                            observed_state[component.idComponent] = defect
-                    else:
-                        pass  # Ignoring false positives for simplicity
+                old_probs = dict(component.observed_state)  # snapshot before update
+                real_defect = component.state
+                detected_defect = self.detect_defect(component)
+                self.partial_update_observed_state(component, detected_defect)
+                self.log_observed_state(pcb, component, old_probs, real_defect, detected_defect)
 
-            for component in pcb.components:
-                if component.idComponent in observed_state:
-                    component.observed_state = {k: 0.0 for k in component.observed_state}
-                    component.observed_state[observed_state[component.idComponent]] = 1.0
-
-            result = {
-                "observed_state": observed_state,
-                "cost": self.cost
-            }
-
-            print(f"[{self.env.now}] Visual Inspection completed for PCB {pcb.idPCB}")
-            return result
-
-class FlyingProbe(Measurement):
-    def __init__(self, idMeasurement, nameMeasurement, accuracy, duration, cost, env, capacity=1):
-        super().__init__(idMeasurement, nameMeasurement, accuracy, duration, cost, env, capacity)
+        return {
+            "observed_state": None,
+            "cost": self.cost
+        }
 
     def execute(self, pcb):
-        with self.resource.request() as request:
-            yield request
-            yield self.env.timeout(self.duration)
-
-            observed_state = {}
-            for component in pcb.components:
-                for defect, prob in component.state_probabilities.items():
-                    if component.state == defect:
-                        if random.random() < self.get_accuracy(defect):
-                            observed_state[component.idComponent] = defect
-                    else:
-                        pass  # Ignoring false positives for simplicity
-
-            for component in pcb.components:
-                if component.idComponent in observed_state:
-                    component.observed_state = {k: 0.0 for k in component.observed_state}
-                    component.observed_state[observed_state[component.idComponent]] = 1.0
-
-            result = {
-                "observed_state": observed_state,
-                "cost": self.cost
-            }
-
-            print(f"[{self.env.now}] Flying Probe Measurement completed for PCB {pcb.idPCB}")
-            return result
+        # The actual measurement routine
+        res = yield from self.do_measurement(pcb)
+        return res
