@@ -97,8 +97,8 @@ def setup_measurements():
 
 def setup_strategies():
     return [
-        Strategy(1, "Reuse", cost=20, income=1000),    # Adjusted income to positive
-        Strategy(2, "Repair", cost=5, income=1500, repair_cost=3.0),   # Adjusted income to positive
+        Strategy(1, "Reuse", cost=20, income=100),    # Adjusted income to positive
+        Strategy(2, "Repair", cost=5, income=150, repair_cost=3.0),   # Adjusted income to positive
         Strategy(3, "Recycle", cost=4, income=5)    # Adjusted income to positive
     ]
 
