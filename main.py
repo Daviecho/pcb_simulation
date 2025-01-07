@@ -39,7 +39,8 @@ def main_function():
     # Initialize SimPy environment and database manager
     env = simpy.Environment()
     db = DatabaseManager()
-    run_name = f"run_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    run_name = f"run_{timestamp}"
     writer = SummaryWriter(os.path.join('runs', run_name), flush_secs=120)    
     # Setup Measurements, Strategies, and Actions once
     measurements = setup_measurements()  # 'env' is now defined
@@ -113,7 +114,7 @@ def main_function():
             length_rewards = {}
             for pcb in finished_pcb_list:
                 length = len(pcb['test_sequence'])
-                reward = pcb['reward']
+                reward = pcb['cumulative_reward']
                 if length not in length_rewards:
                     length_rewards[length] = []
                 length_rewards[length].append(reward)
@@ -161,18 +162,11 @@ def main_function():
         # Log epsilon per step
         for step, epsilon in enumerate(agent.logging_data['epsilon']):
             try:
-                writer.add_scalar(f'Epsilon per Step', epsilon, step + stepsInLastEpisode)
+                writer.add_scalar(f'Epsilon per Step and Epsiode', epsilon, step/len(agent.logging_data['epsilon'])  + episode - 1)
             except Exception as e:
                 print(f"An error occurred during logging Epsilon per Step: {e}")
         stepsInLastEpisode += len(agent.logging_data['epsilon'])
 
-        # Log mean epsilon per episode
-        if agent.logging_data['epsilon']:
-            mean_epsilon = np.mean(agent.logging_data['epsilon'])
-            try:
-                writer.add_scalar(f'Mean Epsilon/Episode {episode}', mean_epsilon, episode)
-            except Exception as e:
-                print(f"An error occurred during logging Mean Epsilon/Episode {episode}: {e}")
 
         # Log loss
         if agent.logging_data['loss']:
@@ -215,7 +209,7 @@ def main_function():
     writer.close()
 
     # Optionally, save the agent's model
-    torch.save(agent.policy_net.state_dict(), f"dqn_agent_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pth")
+    torch.save(agent.policy_net.state_dict(), f"dqn_agent_{timestamp}.pth")
 
     # Plot the learning curve
     #plot_learning_curve(rewards)

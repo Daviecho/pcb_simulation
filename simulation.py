@@ -4,6 +4,7 @@ from decision_system import Decision_System
 from agent import DQNAgent
 import random
 import torch
+import json
 
 def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_actions=100, progress=0.0, finished_pcb_list=None):
     total_time = 0
@@ -53,12 +54,6 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
                 reward = result.get("income", 0)
 
             pcb.current_profit += result.get("income", 0)
-            db.insert_test_result(
-                    ','.join(test_sequence),
-                    action.target.name,
-                    total_time,
-                    pcb.current_profit
-                )
             done = True
         else:
             cost = result.get("cost", 0)
@@ -86,6 +81,16 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
 
         # Append to finished_pcb_list if provided
 
+
+    db.insert_test_result(
+        pcb.idPCB,
+        ','.join(test_sequence),
+        total_time,
+        pcb.current_profit,
+        cumulative_reward,
+        json.dumps({comp.idComponent: comp.state for comp in pcb.components}),
+        json.dumps({comp.idComponent: comp.observed_state for comp in pcb.components})
+)
 
 
     if finished_pcb_list is not None:

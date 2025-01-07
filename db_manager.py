@@ -10,24 +10,27 @@ class DatabaseManager:
     def create_tables(self):
         cursor = self.conn.cursor()
 
-        # Table Test_Results with pcb_id AUTOINCREMENT
+        # Table Test_Results with pcb_id AUTOINCREMENT and new state columns
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Test_Results (
-                pcb_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pcb_id TEXT,
                 test_sequence TEXT,
-                strategy_used TEXT,
                 total_time REAL,
-                profit REAL
+                profit REAL,
+                CumRew REAL,
+                real_state TEXT,
+                observed_state TEXT
             )
         """)
         self.conn.commit()
 
-    def insert_test_result(self, test_sequence, strategy_used, total_time, profit):
+    def insert_test_result(self, pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state):
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT INTO Test_Results (test_sequence, strategy_used, total_time, profit)
-            VALUES (?, ?, ?, ?)
-        """, (test_sequence, strategy_used, total_time, profit))
+            INSERT INTO Test_Results (pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state))
         self.conn.commit()
 
     def fetch_all_results(self):
