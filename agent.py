@@ -28,7 +28,7 @@ class ReplayBuffer:
 class DQNAgent:
     def __init__(self, node_feature_dim, hidden_dim, output_dim, writer=None, 
                  lr=1e-4, gamma=0.99, buffer_capacity=1000, batch_size=128, 
-                 epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=5000):
+                 epsilon_start=1.0, epsilon_end=0.01, epsilon_decay=15000):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.policy_net = GNNModel(node_feature_dim, hidden_dim, output_dim).to(self.device)
         self.target_net = GNNModel(node_feature_dim, hidden_dim, output_dim).to(self.device)

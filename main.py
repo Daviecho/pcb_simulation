@@ -37,9 +37,9 @@ def plot_learning_curve(rewards, window=100):
 
 def main_function():
     # Initialize SimPy environment and database manager
-    env = simpy.Environment()
-    db = DatabaseManager()
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    env = simpy.Environment()
+    db = DatabaseManager(timestamp=timestamp)
     run_name = f"run_{timestamp}"
     writer = SummaryWriter(os.path.join('runs', run_name), flush_secs=120)    
     # Setup Measurements, Strategies, and Actions once
@@ -101,8 +101,8 @@ def main_function():
             average_length = total_length / len(finished_pcb_list) if finished_pcb_list else 0
 
             # Log the average length to TensorBoard
-            writer.add_scalar('Average Test Sequence Length', average_length, global_step=1)
-        except Exception as e:
+            writer.add_scalar('Average Test Sequence Length', average_length, global_step=episode)
+        except Exception as e:  
             print(f"An error occurred during logging Average Test Sequence Length: {e}")
 
         # Maximum sequence length
@@ -162,7 +162,7 @@ def main_function():
         # Log epsilon per step
         for step, epsilon in enumerate(agent.logging_data['epsilon']):
             try:
-                writer.add_scalar(f'Epsilon per Step and Epsiode', epsilon, step/len(agent.logging_data['epsilon'])  + episode - 1)
+                writer.add_scalar(f'Epsilon per Step', epsilon, step + stepsInLastEpisode)
             except Exception as e:
                 print(f"An error occurred during logging Epsilon per Step: {e}")
         stepsInLastEpisode += len(agent.logging_data['epsilon'])
@@ -184,19 +184,19 @@ def main_function():
             except Exception as e:
                 print(f"An error occurred during logging Q-Values/Average Q-Value: {e}")
 
-        # Log gradients
-        for name, grad in agent.logging_data['gradients']:
-            try:
-                writer.add_histogram(f'Gradients/{name}', grad, episode)
-            except Exception as e:
-                print(f"An error occurred during logging Gradients/{name}: {e}")
+        # # Log gradients
+        # for name, grad in agent.logging_data['gradients']:
+        #     try:
+        #         writer.add_histogram(f'Gradients/{name}', grad, episode)
+        #     except Exception as e:
+        #         print(f"An error occurred during logging Gradients/{name}: {e}")
 
-        # Log weights
-        for name, weight in agent.logging_data['weights']:
-            try:
-                writer.add_histogram(f'Weights/{name}', weight, episode)
-            except Exception as e:
-                print(f"An error occurred during logging Weights/{name}: {e}")
+        # # Log weights
+        # for name, weight in agent.logging_data['weights']:
+        #     try:
+        #         writer.add_histogram(f'Weights/{name}', weight, episode)
+        #     except Exception as e:
+        #         print(f"An error occurred during logging Weights/{name}: {e}")
 
         # Periodically update the target network
         if episode % 10 == 0:
@@ -205,8 +205,8 @@ def main_function():
 
 
     # After all episodes, close the database and TensorBoard writer
-    db.close()
     writer.close()
+    db.close()
 
     # Optionally, save the agent's model
     torch.save(agent.policy_net.state_dict(), f"dqn_agent_{timestamp}.pth")
