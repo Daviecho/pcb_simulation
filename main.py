@@ -11,37 +11,38 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from datetime import datetime
 import os
+from dotenv import load_dotenv  # Import dotenv to load environment variables
+import json
+import shutil
 
-def plot_learning_curve(rewards, window=100):
-    """
-    Plots the learning curve using the cumulative rewards.
-    
-    Args:
-        rewards (list): List of cumulative rewards per episode.
-        window (int): Window size for moving average.
-    """
-    rewards = np.array(rewards)
-    moving_average = np.convolve(rewards, np.ones(window)/window, mode='valid')
+# Load .env variables
+load_dotenv()
 
-    plt.figure(figsize=(12, 6))
-    plt.plot(rewards, label='Total Reward per Episode', alpha=0.5)
-    plt.plot(moving_average, label=f'Moving Average (window={window})', color='red')
-    plt.xlabel('Episode')
-    plt.ylabel('Total Reward')
-    plt.title('RL Agent Learning Progress Over Episodes')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig('learning_curve.png')  # Save the plot as a PNG file
-    plt.show()
+# Load parameters from .env
+NUM_EPISODES = int(os.getenv("NUM_EPISODES", 100))
+HIDDEN_DIM = int(os.getenv("HIDDEN_DIM", 64))
+TENSORBOARD_FLUSH_SECS = int(os.getenv("TENSORBOARD_FLUSH_SECS", 120))
+RUNS_DIR = os.getenv("RUNS_DIR", "runs")
 
 def main_function():
     # Initialize SimPy environment and database manager
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+    # Define the run directory structure
+    run_dir = os.path.join(RUNS_DIR, f"run_{timestamp}")
+    #tensorboard_dir = os.path.join(run_dir, "tb")
+    model_dir = os.path.join(run_dir, "model")
+    metadata_dir = os.path.join(run_dir, "startdata")
+
+    # Create directories
+    #os.makedirs(tensorboard_dir, exist_ok=True)
+    os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(metadata_dir, exist_ok=True)
+
     env = simpy.Environment()
-    db = DatabaseManager(timestamp=timestamp)
-    run_name = f"run_{timestamp}"
-    writer = SummaryWriter(os.path.join('runs', run_name), flush_secs=120)    
+    db = DatabaseManager(os.path.join(run_dir, f"db_{timestamp}.db"))
+    #run_name = f"run_{timestamp}"
+    writer = SummaryWriter(os.path.join("tensorb", f"run_{timestamp}"), flush_secs=TENSORBOARD_FLUSH_SECS)
     # Setup Measurements, Strategies, and Actions once
     measurements = setup_measurements()  # 'env' is now defined
     strategies = setup_strategies()
@@ -52,24 +53,29 @@ def main_function():
     # Generate a sample PCB to determine node_feature_dim
     sample_pcb = setup_pcb()[0]
     node_feature_dim = len(sample_pcb.get_graph()[0][0])  # Number of features per node
-    hidden_dim = 64
     output_dim = len(actions)  # Total number of possible actions
 
     # Initialize the RL agent
-    agent = DQNAgent(node_feature_dim, hidden_dim, output_dim, writer=writer)
+    agent = DQNAgent(node_feature_dim, HIDDEN_DIM, output_dim, writer=writer)
     decision_system = Decision_System(agent, actions, None)  # Assuming no GNN model is needed here
 
-    num_episodes = 100  # Define number of training episodes
+    # Save metadata
+    save_run_metadata(
+        timestamp,
+        agent,
+        metadata_dir,
+    )
+
     rewards = []
     stepsInLastEpisode = 0
 
-    for episode in range(1, num_episodes + 1):        
+    for episode in range(1, NUM_EPISODES + 1):        
         print(f"--- Starting Episode {episode} ---")
         
         agent.logging_data = {key: [] for key in agent.logging_data.keys()}
         agent.logging_data['action_rewards'] = {action: [] for action in range(output_dim)}
 
-        progress = (episode - 1) / (num_episodes - 1)  # 0 at start, 1 at last episode
+        progress = (episode - 1) / (NUM_EPISODES  - 1)  # 0 at start, 1 at last episode
         pcb_list = setup_pcb()  # Reset PCBs for each episode
         env = simpy.Environment()  # Reset environment for each episode
         # Initialize Measurements in the new environment
@@ -209,10 +215,35 @@ def main_function():
     db.close()
 
     # Optionally, save the agent's model
-    torch.save(agent.policy_net.state_dict(), f"dqn_agent_{timestamp}.pth")
+    torch.save(agent.policy_net.state_dict(), os.path.join(model_dir, f"dqn_agent_{timestamp}.pth"))
 
     # Plot the learning curve
     #plot_learning_curve(rewards)
+
+
+def save_run_metadata(timestamp, agent, output_dir, env_file=".env"):
+    """
+    Save run metadata, including environment variables, agent parameters, random states, and seed.
+
+    Args:
+        env (simpy.Environment): The simulation environment.
+        agent (DQNAgent): The RL agent instance.
+        random_state (tuple): Python random module's state.
+        simpy_state (float): Current SimPy simulation time or seed.
+        output_dir (str): Directory to save metadata files.
+        env_file (str): Path to the .env file to be copied.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Copy .env file if it exists
+    if os.path.exists(env_file):
+        shutil.copy(env_file, os.path.join(output_dir, f"{os.path.basename(env_file)}"))
+    else:
+        print(f"Warning: {env_file} not found. Skipping .env file backup.")
+
+    # Save agent parameters
+    torch.save(agent.policy_net.state_dict(), os.path.join(output_dir, f"dqn_agent_{timestamp}.pth"))
+
 
 if __name__ == "__main__":
     main_function()

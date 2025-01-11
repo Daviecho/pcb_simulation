@@ -5,6 +5,37 @@ from agent import DQNAgent
 import random
 import torch
 import json
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from the .env file
+load_dotenv()
+
+# Load test_bonus parameters
+test_bonus_start = float(os.getenv("TEST_BONUS_START", 25))
+test_bonus_zero_progress = float(os.getenv("TEST_BONUS_ZERO_PROGRESS", 0.5))
+test_bonus_end = float(os.getenv("TEST_BONUS_END", -5))
+test_bonus_end_progress = float(os.getenv("TEST_BONUS_END_PROGRESS", 1.0))
+
+# Load recycle_bonus parameters
+recycle_bonus_start = float(os.getenv("RECYCLE_BONUS_START", -5))
+recycle_bonus_zero_progress = float(os.getenv("RECYCLE_BONUS_ZERO_PROGRESS", 0.4))
+recycle_bonus_end = float(os.getenv("RECYCLE_BONUS_END", 10))
+recycle_bonus_end_progress = float(os.getenv("RECYCLE_BONUS_END_PROGRESS", 0.8))
+
+# Load repair_bonus parameters
+repair_bonus_start = float(os.getenv("REPAIR_BONUS_START", -5))
+repair_bonus_zero_progress = float(os.getenv("REPAIR_BONUS_ZERO_PROGRESS", 0.4))
+repair_bonus_end = float(os.getenv("REPAIR_BONUS_END", 10))
+repair_bonus_end_progress = float(os.getenv("REPAIR_BONUS_END_PROGRESS", 0.8))
+
+# Load reuse_bonus parameters
+reuse_bonus_start = float(os.getenv("REUSE_BONUS_START", -5))
+reuse_bonus_zero_progress = float(os.getenv("REUSE_BONUS_ZERO_PROGRESS", 0.4))
+reuse_bonus_end = float(os.getenv("REUSE_BONUS_END", 10))
+reuse_bonus_end_progress = float(os.getenv("REUSE_BONUS_END_PROGRESS", 0.8))
+
+
 
 def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_actions=100, progress=0.0, finished_pcb_list=None):
     total_time = 0
@@ -12,9 +43,14 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
     done = False
     cumulative_reward = 0
 
-    test_bonus = (1 - progress) * 25 + progress * (-5)      # Great early, negative later
-    recycle_bonus = (1 - progress) * (-5) #+ progress * 1   # Bad early, neutral later
-    repair_bonus = (1 - progress) * 0 + progress * 0       # No penalty for failed repairs
+    #endprogress > zeroprogress > 0
+    test_bonus = linear_function(progress, test_bonus_start, test_bonus_zero_progress, test_bonus_end, test_bonus_end_progress)
+    recycle_bonus = linear_function(progress, recycle_bonus_start, recycle_bonus_zero_progress, recycle_bonus_end, recycle_bonus_end_progress)
+    repair_bonus = linear_function(progress, repair_bonus_start, repair_bonus_zero_progress, repair_bonus_end, repair_bonus_end_progress)
+    reuse_bonus = linear_function(progress, reuse_bonus_start, reuse_bonus_zero_progress, reuse_bonus_end, reuse_bonus_end_progress)
+    # (1 - progress) * 25 + progress * (-5)      # Great early, negative later
+    # #recycle_bonus = (1 - progress) * (-5) #+ progress * 1   # Bad early, neutral later
+    #repair_bonus = (1 - progress) * 0 + progress * 0       # No penalty for failed repairs
 
 
     while not done:
@@ -46,10 +82,12 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
             # Strategy action
             if action.target.name == "Recycle":
                 # Income plus dynamic bonus
-                reward = result.get("income", 0) + recycle_bonus
+                reward = recycle_bonus
             elif action.target.name == "Repair":
                 reward = result.get("income", 0) + repair_bonus
-            else:
+            elif action.target.name == "Reuse":
+                reward = result.get("income", 0) + reuse_bonus
+            else: #should never be hit currently
                 # Reuse or other strategies
                 reward = result.get("income", 0)
 
@@ -58,7 +96,7 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         else:
             cost = result.get("cost", 0)
             pcb.current_profit -= cost 
-            reward = test_bonus - cost
+            reward = test_bonus
 
 
         # For RL, collect transition and store in replay buffer
@@ -107,3 +145,45 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         f"    Final Cumulative Reward: {cumulative_reward}\n"
         f"    Total Profit: {pcb.current_profit}")
     return cumulative_reward
+
+
+def linear_function(progress, start_point, zero_progress, end_value, end_progress):
+    """
+    Computes the value of a linear function based on progress and the given parameters,
+    with rules to validate inputs.
+
+    Args:
+        progress (float): The current progress value.
+        start_point (float): The function value at progress = 0.
+        zero_progress (float): The progress value when the function becomes zero.
+        end_value (float): The function value at progress = end_progress.
+        end_progress (float): The progress value when the function reaches end_value.
+
+    Returns:
+        float: The computed value of the function at the given progress.
+
+    Raises:
+        ValueError: If any input parameter violates the rules.
+    """
+    # Rule 1: zero_progress must be greater than 0
+    if zero_progress <= 0:
+        raise ValueError("zero_progress must be greater than 0.")
+
+    # Rule 2: end_progress must be greater than zero_progress
+    if end_progress <= zero_progress:
+        raise ValueError("end_progress must be greater than zero_progress.")
+
+    # Rule 3: progress must be non-negative
+    if progress < 0:
+        raise ValueError("progress cannot be negative.")
+
+    # Compute the function value based on progress
+    if progress <= zero_progress:
+        # Linear interpolation from start_point to 0
+        return start_point * (1 - (progress / zero_progress))
+    elif zero_progress < progress <= end_progress:
+        # Linear interpolation from 0 to end_value
+        return end_value * ((progress - zero_progress) / (end_progress - zero_progress))
+    else:
+        # If progress exceeds end_progress, return the end_value
+        return end_value

@@ -3,11 +3,10 @@ import sqlite3
 import time
 
 class DatabaseManager:
-    def __init__(self, timestamp, db_name="database.db"):
-        self.db_name = db_name
+    def __init__(self, savepath):
+        self.path = savepath
         self.conn = sqlite3.connect(":memory:")  # Use in-memory database
         self.create_tables()
-        self.runstamp = timestamp
 
     def create_tables(self):
         cursor = self.conn.cursor()
@@ -16,7 +15,6 @@ class DatabaseManager:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Test_Results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                runstamp TEXT,
                 pcb_id TEXT,
                 test_sequence TEXT,
                 total_time REAL,
@@ -31,9 +29,9 @@ class DatabaseManager:
     def insert_test_result(self, pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state):
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT INTO Test_Results (runstamp, pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (self.runstamp, pcb_id,  test_sequence, total_time, profit, CumRew, real_state, observed_state))
+            INSERT INTO Test_Results (pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (pcb_id,  test_sequence, total_time, profit, CumRew, real_state, observed_state))
         self.conn.commit()
 
     def fetch_all_results(self):
@@ -43,6 +41,6 @@ class DatabaseManager:
 
     def close(self):
         # Save in-memory database to disk
-        with sqlite3.connect(self.db_name) as disk_conn:
+        with sqlite3.connect(self.path) as disk_conn:
             self.conn.backup(disk_conn)
         self.conn.close()

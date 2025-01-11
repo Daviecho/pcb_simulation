@@ -4,6 +4,17 @@ from pcb import PCB, Component
 from measurement import Measurement  # Only one class now
 from strategy import Strategy
 from action import Action
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env
+load_dotenv()
+
+# Load parameters from .env
+NUM_PCBS = int(os.getenv("NUM_PCBS", 1000))
+MIN_COMPONENTS = int(os.getenv("MIN_COMPONENTS", 3))
+MAX_COMPONENTS = int(os.getenv("MAX_COMPONENTS", 10))
+
 
 def generate_state_probabilities():
     """
@@ -29,9 +40,9 @@ def setup_pcb():
         list: A list of PCB instances.
     """
     pcb_list = []
-    num_pcb = 1000  # Total number of PCBs to generate
-    min_components = 3  # Minimum number of components per PCB
-    max_components = 10  # Maximum number of components per PCB
+    num_pcb = NUM_PCBS  # Total number of PCBs to generate
+    min_components = MIN_COMPONENTS  # Minimum number of components per PCB
+    max_components = MAX_COMPONENTS  # Maximum number of components per PCB
 
     # Define possible component types and PCB types
     component_types = ["Type_1", "Type_2", "Type_3", "Type_4", "Type_5"]
@@ -70,7 +81,72 @@ def setup_pcb():
 
     return pcb_list
 
+
+
+def parse_measurements():
+    """
+    Parses measurement configurations from .env and returns a list of Measurement instances.
+
+    Returns:
+        list: A list of Measurement instances.
+    """
+    measurements = []
+    index = 1
+    while True:
+        # Attempt to load the next measurement configuration
+        id_ = os.getenv(f"MEASUREMENT_{index}_ID")
+        name = os.getenv(f"MEASUREMENT_{index}_NAME")
+        solder = os.getenv(f"MEASUREMENT_{index}_SOLDER")
+        leg = os.getenv(f"MEASUREMENT_{index}_LEG")
+        burned = os.getenv(f"MEASUREMENT_{index}_BURNED")
+        duration = os.getenv(f"MEASUREMENT_{index}_DURATION")
+        cost = os.getenv(f"MEASUREMENT_{index}_COST")
+
+        if not id_ or not name:  # Stop when no further measurements are found
+            break
+
+        # Create a Measurement instance
+        detection_probs = {
+            "solder": float(solder),
+            "leg": float(leg),
+            "burned": float(burned),
+        }
+        measurements.append(Measurement(int(id_), name, detection_probs, int(duration), int(cost)))
+
+        index += 1  # Move to the next measurement
+
+    return measurements
+
+def parse_strategies():
+    """
+    Parses strategy configurations from .env and returns a list of Strategy instances.
+
+    Returns:
+        list: A list of Strategy instances.
+    """
+    strategies = []
+    index = 1
+    while True:
+        # Attempt to load the next strategy configuration
+        id_ = os.getenv(f"STRATEGY_{index}_ID")
+        name = os.getenv(f"STRATEGY_{index}_NAME")
+        cost = os.getenv(f"STRATEGY_{index}_COST")
+        income = os.getenv(f"STRATEGY_{index}_INCOME")
+        repair_cost = os.getenv(f"STRATEGY_{index}_REPAIR_COST")
+
+        if not id_ or not name:  # Stop when no further strategies are found
+            break
+
+        # Create a Strategy instance
+        strategies.append(Strategy(int(id_), name, int(cost), int(income), float(repair_cost) if repair_cost else None))
+
+        index += 1  # Move to the next strategy
+
+    return strategies
+
+
 def setup_measurements():
+    return parse_measurements()
     return [
         Measurement(
             1, 
@@ -96,6 +172,7 @@ def setup_measurements():
     ]
 
 def setup_strategies():
+    return parse_strategies()
     return [
         Strategy(1, "Reuse", cost=20, income=100),    # Adjusted income to positive
         Strategy(2, "Repair", cost=5, income=150, repair_cost=3.0),   # Adjusted income to positive
