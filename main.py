@@ -96,7 +96,8 @@ def main_function():
         total_episode_reward = sum(episode_rewards)
         rewards.append(total_episode_reward)
         average_reward = np.mean(rewards[-10:])  # Average over last 10 episodes
-        print(f"--- Episode {episode} Completed: Total Reward = {total_episode_reward} | Average Reward = {average_reward:.2f} ---")
+        episode_profit = sum(pcb['total_profit'] for pcb in finished_pcb_list)
+        print(f"--- Episode {episode} Completed: Total Reward = {total_episode_reward} | Average Reward = {average_reward:.2f} | Total profit = {episode_profit:.2f} ---")
         print(f"Number of PCBs Processed: {len(finished_pcb_list)}")
 
         # Log rewards to TensorBoard
@@ -206,7 +207,7 @@ def main_function():
 
         # Periodically update the target network
         if episode % 10 == 0:
-            agent.update_target_network()
+            agent.update_target_network()        
 
 
 
@@ -219,6 +220,7 @@ def main_function():
 
     # Plot the learning curve
     #plot_learning_curve(rewards)
+    return np.mean(episode_profit)
 
 
 def save_run_metadata(timestamp, agent, output_dir, env_file=".env"):

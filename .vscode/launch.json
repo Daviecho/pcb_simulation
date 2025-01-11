@@ -11,6 +11,13 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "optuna",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "opt.py",
+            "console": "integratedTerminal"
         }
     ]
 }

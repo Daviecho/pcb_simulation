@@ -18,7 +18,7 @@ pip install python-dotenv
 # Install TensorBoard
 echo "Installing TensorBoard..."
 pip install tensorboard
-
+pip install optuna
 #git clone https://github.com/Daviecho/pcb_simulation.git
 
 echo "Installation script completed."
