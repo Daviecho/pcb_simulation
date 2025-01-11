@@ -14,6 +14,12 @@ class Measurement:
     def initAsResourceInEnv(self, env):
         self.resource = simpy.Resource(env, capacity=self.capacity)
         self.env = env
+
+    def getCost(self, numComp):
+        if(self.name == "Flying Probe"):
+            return self.cost * numComp
+        else:
+            return self.cost
         
 
     def get_accuracy(self, defect_name):
@@ -34,7 +40,7 @@ class Measurement:
                 else:
                     component.observed_state[defect] = max(
                         0.0,
-                        component.observed_state[defect] - alpha / (len(component.observed_state) - 1)
+                        component.observed_state[defect] - alpha
                     )
 
     def log_observed_state(self, pcb, component, old_probs, real_defect, detected_defect):
@@ -69,9 +75,10 @@ class Measurement:
                 self.partial_update_observed_state(component, detected_defect)
                 #self.log_observed_state(pcb, component, old_probs, real_defect, detected_defect)
 
+        cost = self.getCost(len(pcb.components))
         return {
             "observed_state": None,
-            "cost": self.cost
+            "cost": cost
         }
 
     def execute(self, pcb):

@@ -22,3 +22,6 @@ pip install optuna
 #git clone https://github.com/Daviecho/pcb_simulation.git
 
 echo "Installation script completed."
+
+#scp -r ubuntu@sdm:~/pcb_simulation/tensorb .
+# tensorboard --logdir=runs
