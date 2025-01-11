@@ -2,7 +2,7 @@
 
 # Update and upgrade system packages
 echo "Updating system packages..."
-sudo apt-get update && sudo apt-get upgrade -y
+#sudo apt-get update && sudo apt-get upgrade -y #optional
 
 
 # Install SimPy

@@ -6,7 +6,6 @@ from agent import DQNAgent
 from decision_system import Decision_System
 import simpy
 import torch
-import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from datetime import datetime
