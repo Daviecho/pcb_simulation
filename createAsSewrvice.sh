@@ -2,8 +2,8 @@
 
 # Variables
 SERVICE_NAME="optFS"           # Replace with your desired service name
-SCRIPT_PATH="/root/pcb_simulation/opt.py"      # Full path to your Python script
-WORKING_DIR="/root/pcb_simulation"  # Directory where the script resides
+SCRIPT_PATH="/home/ubuntu/pcb_simulation/opt.py"      # Full path to your Python script
+WORKING_DIR="/home/ubuntu/pcb_simulation"  # Directory where the script resides
 LOG_DIR="/var/log"                   # Directory for logs
 OUTPUT_LOG="$LOG_DIR/log_optFS.log"
 ERROR_LOG="$LOG_DIR/error_optFS.log"
