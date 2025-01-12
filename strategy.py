@@ -32,14 +32,14 @@ class Strategy:
                 for defect, observed_prob in component.observed_state.items():
                     if defect != "noDefect" and observed_prob > 0.5:  # Threshold for detected defect; currently not working because measurements is setting prob always to 1!
                         if component.state == defect:  # Successfull Repair only if the observed defect matches the real defect
-                            component.state = "noDefect"  # Repair the defect
+                            component.finalstate = "noDefect"  # Repair the defect
                         total_repairs += 1
 
             total_cost = self.repair_cost * total_repairs
             profit -= total_cost  # Subtract total repair costs
 
             # Verify if all defects were repaired
-            if all(component.state == "noDefect" for component in pcb.components):
+            if all(component.finalstate == "noDefect" for component in pcb.components):
                 profit += self.income  # Add income if all defects are accounted for
 
         elif self.name == "Recycle":

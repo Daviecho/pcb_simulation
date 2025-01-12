@@ -15,23 +15,25 @@ class DatabaseManager:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Test_Results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                progress REAL,
                 pcb_id TEXT,
                 test_sequence TEXT,
                 total_time REAL,
                 profit REAL,
                 CumRew REAL,
                 real_state TEXT,
+                finalstate TEXT,
                 observed_state TEXT
             )
         """)
         self.conn.commit()
 
-    def insert_test_result(self, pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state):
+    def insert_test_result(self, progress, pcb_id, test_sequence, total_time, profit, CumRew, real_state, finalstate, observed_state):
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT INTO Test_Results (pcb_id, test_sequence, total_time, profit, CumRew, real_state, observed_state)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (pcb_id,  test_sequence, total_time, profit, CumRew, real_state, observed_state))
+            INSERT INTO Test_Results (progress, pcb_id, test_sequence, total_time, profit, CumRew, real_state, finalstate, observed_state)
+            VALUES (?, ?, ?, ?, ?, ?, ?,?,?)
+        """, (progress, pcb_id,  test_sequence, total_time, profit, CumRew, real_state, finalstate, observed_state))
         self.conn.commit()
 
     def fetch_all_results(self):

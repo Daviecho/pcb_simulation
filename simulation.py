@@ -59,8 +59,8 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         # Avoid repeating the same measurement
         executed_tests = [action.target.name for action in actions if action.action_type == "test" and action.target.name in test_sequence]
         for idx, action in enumerate(actions): #currently a measurement can only be done once! Maybe we should 
-            if action.action_type == "test" and action.target.name in executed_tests:
-                continue
+            # if action.action_type == "test" and action.target.name in executed_tests:
+            #     continue
             available_actions.append(idx)
 
         # Select a test action using the agent
@@ -121,12 +121,14 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
 
 
     db.insert_test_result(
+        progress,
         pcb.idPCB,
         ','.join(test_sequence),
         total_time,
         pcb.current_profit,
         cumulative_reward,
         json.dumps({comp.idComponent: comp.state for comp in pcb.components}),
+        json.dumps({comp.idComponent: comp.finalstate for comp in pcb.components}),
         json.dumps({comp.idComponent: comp.observed_state for comp in pcb.components})
 )
 

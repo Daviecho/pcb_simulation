@@ -54,6 +54,7 @@ class Component:
             cumulative_probability += probability
             if random_value <= cumulative_probability:
                 self.state = defect
+                self.finalstate = defect
                 break
 
     def get_features(self):
@@ -75,5 +76,6 @@ class Component:
         # Create a deep copy of the Component
         cloned_component = Component(self.idComponent, self.componentTypeName, self.state_probabilities.copy())
         cloned_component.state = self.state
+        cloned_component.finalstate = self.finalstate
         cloned_component.observed_state = self.observed_state.copy()
         return cloned_component
