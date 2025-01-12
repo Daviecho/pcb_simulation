@@ -15,28 +15,56 @@ OPT_STEPS = int(os.getenv("OPT_STEPS", 4))
 
 def objective(trial):
     # Suggest piecewise parameters for test bonus as an example
-    tb_start = trial.suggest_float("test_bonus_start", 0, 30)
-    tb_zero = trial.suggest_float("test_bonus_zero_progress", 0.01, 0.9)
-    tb_end = trial.suggest_float("test_bonus_end", -10, 0)
-    tb_end_prog = trial.suggest_float("test_bonus_end_progress", tb_zero + 0.01, 1.0)
+# Suggest piecewise parameters for X-Ray
+    xray_zero = trial.suggest_float("xray_bonus_zero_progress", 0.01, 0.9)
+    xray_end_prog = trial.suggest_float("xray_bonus_end_progress", xray_zero + 0.01, 1.0)
 
-    # Set environment variables before main_function
-    os.environ["TEST_BONUS_START"] = str(tb_start)
-    os.environ["TEST_BONUS_ZERO_PROGRESS"] = str(tb_zero)
-    os.environ["TEST_BONUS_END"] = str(tb_end)
-    os.environ["TEST_BONUS_END_PROGRESS"] = str(tb_end_prog)
+    # Suggest piecewise parameters for Visual Inspection
+    visual_zero = trial.suggest_float("visual_bonus_zero_progress", 0.01, 0.9)
+    visual_end_prog = trial.suggest_float("visual_bonus_end_progress", visual_zero + 0.01, 1.0)
+
+    # Suggest piecewise parameters for Flying Probe
+    flying_zero = trial.suggest_float("flying_probe_bonus_zero_progress", 0.01, 0.9)
+    flying_end_prog = trial.suggest_float("flying_probe_bonus_end_progress", flying_zero + 0.01, 1.0)
+
+        # Set environment variables
+    #os.environ["XRAY_BONUS_START"] = str(xray_start)
+    os.environ["XRAY_BONUS_ZERO_PROGRESS"] = str(xray_zero)
+    #os.environ["XRAY_BONUS_END"] = str(xray_end)
+    os.environ["XRAY_BONUS_END_PROGRESS"] = str(xray_end_prog)
+
+    #os.environ["VISUAL_BONUS_START"] = str(visual_start)
+    os.environ["VISUAL_BONUS_ZERO_PROGRESS"] = str(visual_zero)
+    #os.environ["VISUAL_BONUS_END"] = str(visual_end)
+    os.environ["VISUAL_BONUS_END_PROGRESS"] = str(visual_end_prog)
+
+    #os.environ["FLYING_PROBE_BONUS_START"] = str(flying_start)
+    os.environ["FLYING_PROBE_BONUS_ZERO_PROGRESS"] = str(flying_zero)
+    #os.environ["FLYING_PROBE_BONUS_END"] = str(flying_end)
+    os.environ["FLYING_PROBE_BONUS_END_PROGRESS"] = str(flying_end_prog)
 
     hidden_dim = trial.suggest_int("hidden_dim", 8, 128)
     os.environ["HIDDEN_DIM"] = str(hidden_dim)
     # Repeat for recycle, repair, reuse if you want those optimized as well
 
 
+
+
     # Prepare hyperparameters as a dictionary
     parameters = {
-        "test_bonus_start": tb_start,
-        "test_bonus_zero_progress": tb_zero,
-        "test_bonus_end": tb_end,
-        "test_bonus_end_progress": tb_end_prog,
+        #"xray_bonus_start": xray_start,
+        "xray_bonus_zero_progress": xray_zero,
+        #"xray_bonus_end": xray_end,
+        "xray_bonus_end_progress": xray_end_prog,
+        #"visual_bonus_start": visual_start,
+        "visual_bonus_zero_progress": visual_zero,
+        #"visual_bonus_end": visual_end,
+        "visual_bonus_end_progress": visual_end_prog,
+        #"flying_probe_bonus_start": flying_start,
+        "flying_probe_bonus_zero_progress": flying_zero,
+        #"flying_probe_bonus_end": flying_end,
+        "flying_probe_bonus_end_progress": flying_end_prog,
+        "HIDDEN_DIM": hidden_dim
     }
     
     # Run the training. Make sure main_function() returns a numeric metric.

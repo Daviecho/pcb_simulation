@@ -15,11 +15,27 @@ load_dotenv()
 MAX_ACTIONS = int(os.getenv("MAX_ACTIONS", 50))
 def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_actions=100, progress=0.0, finished_pcb_list=None):
 
-    # Load test_bonus parameters
-    test_bonus_start = float(os.getenv("TEST_BONUS_START", 25))
-    test_bonus_zero_progress = float(os.getenv("TEST_BONUS_ZERO_PROGRESS", 0.5))
-    test_bonus_end = float(os.getenv("TEST_BONUS_END", -5))
-    test_bonus_end_progress = float(os.getenv("TEST_BONUS_END_PROGRESS", 1.0))
+    xray_bonus_start = float(os.getenv("XRAY_BONUS_START", 25))
+    xray_bonus_zero_progress = float(os.getenv("XRAY_BONUS_ZERO_PROGRESS", 0.5))
+    xray_bonus_end = float(os.getenv("XRAY_BONUS_END", -5))
+    xray_bonus_end_progress = float(os.getenv("XRAY_BONUS_END_PROGRESS", 1.0))
+
+    visual_bonus_start = float(os.getenv("VISUAL_BONUS_START", 10))
+    visual_bonus_zero_progress = float(os.getenv("VISUAL_BONUS_ZERO_PROGRESS", 0.4))
+    visual_bonus_end = float(os.getenv("VISUAL_BONUS_END", 0))
+    visual_bonus_end_progress = float(os.getenv("VISUAL_BONUS_END_PROGRESS", 0.9))
+
+    flying_probe_bonus_start = float(os.getenv("FLYING_PROBE_BONUS_START", 30))
+    flying_probe_bonus_zero_progress = float(os.getenv("FLYING_PROBE_BONUS_ZERO_PROGRESS", 0.6))
+    flying_probe_bonus_end = float(os.getenv("FLYING_PROBE_BONUS_END", -10))
+    flying_probe_bonus_end_progress = float(os.getenv("FLYING_PROBE_BONUS_END_PROGRESS", 1.0))
+
+    # Map measurement bonuses to measurement names
+    measurement_bonuses = {
+        "X-Ray": linear_function(progress, xray_bonus_start, xray_bonus_zero_progress, xray_bonus_end, xray_bonus_end_progress),
+        "Visual Inspection": linear_function(progress, visual_bonus_start, visual_bonus_zero_progress, visual_bonus_end, visual_bonus_end_progress),
+        "Flying Probe": linear_function(progress, flying_probe_bonus_start, flying_probe_bonus_zero_progress, flying_probe_bonus_end, flying_probe_bonus_end_progress),
+    }
 
     # Load recycle_bonus parameters
     recycle_bonus_start = float(os.getenv("RECYCLE_BONUS_START", -5))
@@ -97,7 +113,7 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         else:
             cost = result.get("cost", 0)
             pcb.current_profit -= cost 
-            reward = test_bonus - cost
+            reward = measurement_bonuses[action.target.name] - cost
 
 
         # For RL, collect transition and store in replay buffer
