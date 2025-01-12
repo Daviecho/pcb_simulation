@@ -14,9 +14,9 @@ OPT_STEPS = int(os.getenv("OPT_STEPS", 4))
 
 def objective(trial):
     # Suggest piecewise parameters for test bonus as an example
-    tb_start = trial.suggest_float("test_bonus_start", -10, 30)
+    tb_start = trial.suggest_float("test_bonus_start", 0, 30)
     tb_zero = trial.suggest_float("test_bonus_zero_progress", 0.01, 0.9)
-    tb_end = trial.suggest_float("test_bonus_end", -10, 10)
+    tb_end = trial.suggest_float("test_bonus_end", -10, 0)
     tb_end_prog = trial.suggest_float("test_bonus_end_progress", tb_zero + 0.01, 1.0)
 
     # Set environment variables before main_function
