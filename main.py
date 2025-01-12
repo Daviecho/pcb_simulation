@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # main.py
 from setup import setup_pcb, setup_measurements, setup_strategies, setup_actions
 from simulation import pcb_process

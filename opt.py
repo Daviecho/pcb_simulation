@@ -1,4 +1,5 @@
-# example_optuna.py
+#!/usr/bin/env python3
+
 from datetime import datetime
 import optuna
 import os
