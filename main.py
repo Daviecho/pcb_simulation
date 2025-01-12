@@ -114,8 +114,13 @@ def main_function():
         print(f"--- Episode {episode} Completed: Total Reward = {total_episode_reward} | Average Reward = {average_reward:.2f} | Total profit = {episode_profit:.2f} ---")
         print(f"Number of PCBs Processed: {len(finished_pcb_list)}")
         
-        # Log rewards to TensorBoard
+        # Log profit
+        try:
+            writer.add_scalar('total profit per episode', episode_profit, global_step=episode)
+        except Exception as e:  
+            print(f"An error occurred during logging: {e}")
 
+        # Log rewards to TensorBoard
         # Calculate the average length of test_sequence
         try:
             total_length = sum(len(pcb['test_sequence']) for pcb in finished_pcb_list)
