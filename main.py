@@ -13,7 +13,8 @@ import os
 from dotenv import load_dotenv  # Import dotenv to load environment variables
 import json
 import shutil
-
+import matplotlib.pyplot as plt
+import io
 # Load .env variables
 load_dotenv()
 
@@ -67,6 +68,7 @@ def main_function():
 
     rewards = []
     stepsInLastEpisode = 0
+    all_avg_rewards = []  # List of np.arrays
 
     for episode in range(1, NUM_EPISODES + 1):        
         print(f"--- Starting Episode {episode} ---")
@@ -111,32 +113,19 @@ def main_function():
         except Exception as e:  
             print(f"An error occurred during logging Average Test Sequence Length: {e}")
 
-        # Maximum sequence length
-        max_length = 4
-
         # Calculate the average reward per test sequence length
         try:
-            # Group rewards by test sequence length
-            length_rewards = {}
-            for pcb in finished_pcb_list:
-                length = len(pcb['test_sequence'])
-                reward = pcb['cumulative_reward']
-                if length not in length_rewards:
-                    length_rewards[length] = []
-                length_rewards[length].append(reward)
-            
-            # Create a fixed-size array for average rewards (size = max_length)
-            avg_rewards = np.zeros(max_length)
-            for length in range(1, max_length + 1):
-                if length in length_rewards:
-                    avg_rewards[length - 1] = sum(length_rewards[length]) / len(length_rewards[length])
-                else:
-                    avg_rewards[length - 1] = 0  # Or use np.nan for missing lengths
-
-            # Log the array as a histogram for this episode
-            writer.add_histogram('Average Reward per Test Sequence Length', avg_rewards, global_step=episode)
+            avg_rewards = compute_avg_rewards(finished_pcb_list)
+            all_avg_rewards.append(avg_rewards)
         except Exception as e:
-            print(f"An error occurred during logging Average Reward per Test Sequence Length: {e}")
+            print(f"An error occurred during computing Average Reward per Test Sequence Length: {e}")
+
+        try:    
+            plot_image = create_overlay_plot(all_avg_rewards, title=f"Avg Reward per Sequence Length up to Episode {episode}")
+            plot_tensor = torch.tensor(plot_image).permute(2, 0, 1)
+            writer.add_image('Average_Reward_Per_Sequence_Length', plot_tensor, global_step=episode, dataformats='CHW')
+        except Exception as e:
+            print(f"An error occurred during logging the overlay plot: {e}")
 
         try:
             writer.add_scalar('Total Reward per Episode', total_episode_reward, episode)
@@ -163,7 +152,7 @@ def main_function():
                 try:
                     writer.add_scalar(f'Rewards/Action_{action_name}', mean_reward, episode)
                 except Exception as e:
-                    print(f"An error occurred during logging Rewards/Action_{action_name}: {e}")
+                    print(f"An error occurred during logging AverageActionRewardsPerEP/{action_name}: {e}")
 
         # Log epsilon per step
         for step, epsilon in enumerate(agent.logging_data['epsilon']):
@@ -244,6 +233,76 @@ def save_run_metadata(timestamp, agent, output_dir, env_file=".env"):
 
     # Save agent parameters
     torch.save(agent.policy_net.state_dict(), os.path.join(output_dir, f"dqn_agent_{timestamp}.pth"))
+
+
+def compute_avg_rewards(finished_pcb_list):
+    """
+    Computes the average reward for each sequence length in the finished_pcb_list.
+
+    Args:
+        finished_pcb_list (list of dict): Each dict should have 'test_sequence' and 'cumulative_reward' keys.
+
+    Returns:
+        dict: Mapping from sequence length to average reward.
+    """
+    length_rewards = {}
+    for pcb in finished_pcb_list:
+        length = len(pcb['test_sequence'])
+        reward = pcb['cumulative_reward']
+        if length not in length_rewards:
+            length_rewards[length] = []
+        length_rewards[length].append(reward)
+    
+    avg_rewards = {}
+    for length, rewards in length_rewards.items():
+        avg_rewards[length] = sum(rewards) / len(rewards)
+    
+    return avg_rewards
+
+def create_overlay_plot(all_avg_rewards, title="Average Reward per Test Sequence Length", xlabel="Sequence Length", ylabel="Average Reward"):
+    """
+    Creates an overlay plot of average rewards per sequence length across episodes.
+
+    Args:
+        all_avg_rewards (list of dict): Each dict maps sequence lengths to average rewards.
+        title (str): Title of the plot.
+        xlabel (str): Label for the x-axis.
+        ylabel (str): Label for the y-axis.
+
+    Returns:
+        np.ndarray: The plotted image as a NumPy array.
+    """
+    plt.figure(figsize=(10, 7))
+    
+    # Iterate over each dataset and plot it
+    for idx, avg_rewards in enumerate(all_avg_rewards):
+        # Sort the keys for consistent plotting
+        sorted_lengths = sorted(avg_rewards.keys())
+        sorted_rewards = [avg_rewards[length] for length in sorted_lengths]
+        
+        # Plot with a unique color and marker
+        plt.plot(
+            sorted_lengths, sorted_rewards, 
+            marker='o', label=f'Dataset {idx+1}', alpha=0.7
+        )
+    
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend(loc='best', fontsize='small', ncol=2)
+    plt.grid(True)
+    plt.tight_layout()
+    
+    # Save the plot to a PNG in memory
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close()
+    buf.seek(0)
+    
+    # Read the image from the buffer
+    image = plt.imread(buf)
+    
+    return image
 
 
 if __name__ == "__main__":
