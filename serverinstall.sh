@@ -17,10 +17,14 @@ pip install python-dotenv
 # Install TensorBoard
 pip install tensorboard
 pip install optuna
-#git clone https://github.com/Daviecho/pcb_simulation.git
 pip install matplotlib
-echo "Installation script completed."
 
+# git clone https://github.com/Daviecho/pcb_simulation.git
+
+chmod +x main.py
+chmod +x opt.py
+
+echo "Installation script completed."
 #scp -r ubuntu@sdm:~/pcb_simulation/tensorb .
 # tensorboard --logdir=runs
 
