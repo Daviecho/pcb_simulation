@@ -96,7 +96,7 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         else:
             cost = result.get("cost", 0)
             pcb.current_profit -= cost 
-            reward = test_bonus
+            reward = test_bonus - cost
 
 
         # For RL, collect transition and store in replay buffer
