@@ -73,7 +73,7 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         state = pcb.clone()
 
         # Execute the test
-        print(f"[{env.now}] PCB {pcb.idPCB} executing action {action.target.name}")
+        #print(f"[{env.now}] PCB {pcb.idPCB} executing action {action.target.name}")
         result = yield env.process(action.execute(pcb, env))
 
         # Update profit
@@ -142,12 +142,12 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
             'total_profit': pcb.current_profit
         })
 
-    print(
-        f"[{env.now}] PCB {pcb.idPCB} processing completed.\n"
-        f"    Test Sequence: {test_sequence}\n"
-        f"    Final Cumulative Reward: {cumulative_reward}\n"
-        f"    Total Profit: {pcb.current_profit}")
-    return cumulative_reward
+    # print(
+    #     f"[{env.now}] PCB {pcb.idPCB} processing completed.\n"
+    #     f"    Test Sequence: {test_sequence}\n"
+    #     f"    Final Cumulative Reward: {cumulative_reward}\n"
+    #     f"    Total Profit: {pcb.current_profit}")
+    # return cumulative_reward
 
 
 def linear_function(progress, start_point, zero_progress, end_value, end_progress):
