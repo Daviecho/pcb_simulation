@@ -32,8 +32,7 @@ After=network.target
 [Service]
 ExecStart=/usr/bin/python3 $SCRIPT_PATH
 WorkingDirectory=$WORKING_DIR
-Restart=always
-RestartSec=5
+Restart=no
 Environment="PYTHONUNBUFFERED=1"
 StandardOutput=append:$OUTPUT_LOG
 StandardError=append:$ERROR_LOG
