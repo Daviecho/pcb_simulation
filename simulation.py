@@ -12,7 +12,7 @@ import os
 load_dotenv()
 
 
-
+MAX_ACTIONS = int(os.getenv("MAX_ACTIONS", 50))
 def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_actions=100, progress=0.0, finished_pcb_list=None):
 
     # Load test_bonus parameters
@@ -54,7 +54,7 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
     #repair_bonus = (1 - progress) * 0 + progress * 0       # No penalty for failed repairs
 
 
-    while not done:
+    while not done and len(test_sequence) < MAX_ACTIONS:
         # Determine available actions
         available_actions = []
         # Avoid repeating the same measurement
