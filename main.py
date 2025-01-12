@@ -23,6 +23,7 @@ NUM_EPISODES = int(os.getenv("NUM_EPISODES", 100))
 HIDDEN_DIM = int(os.getenv("HIDDEN_DIM", 64))
 TENSORBOARD_FLUSH_SECS = int(os.getenv("TENSORBOARD_FLUSH_SECS", 120))
 RUNS_DIR = os.getenv("RUNS_DIR", "runs")
+MAX_NUM_IMAGES  = int(os.getenv("MAX_NUM_IMAGES", 10))
 
 def main_function():
     # Initialize SimPy environment and database manager
@@ -70,6 +71,12 @@ def main_function():
     stepsInLastEpisode = 0
     all_avg_rewards = []  # List of np.arrays
 
+    # Calculate the intervals for image logging
+    if MAX_NUM_IMAGES >= NUM_EPISODES:
+        intervals = range(1, NUM_EPISODES + 1)  # Log every episode
+    else:
+        intervals = np.linspace(1, NUM_EPISODES, MAX_NUM_IMAGES, dtype=int)
+
     for episode in range(1, NUM_EPISODES + 1):        
         print(f"--- Starting Episode {episode} ---")
         
@@ -113,17 +120,14 @@ def main_function():
         except Exception as e:  
             print(f"An error occurred during logging Average Test Sequence Length: {e}")
 
-        # Calculate the average reward per test sequence length
+        # Calculate the average reward per test sequence length and plot
         try:
-            avg_rewards = compute_avg_rewards(finished_pcb_list)
-            all_avg_rewards.append(avg_rewards)
-        except Exception as e:
-            print(f"An error occurred during computing Average Reward per Test Sequence Length: {e}")
-
-        try:    
-            plot_image = create_overlay_plot(all_avg_rewards, title=f"Avg Reward per Sequence Length up to Episode {episode}")
-            plot_tensor = torch.tensor(plot_image).permute(2, 0, 1)
-            writer.add_image('Average_Reward_Per_Sequence_Length', plot_tensor, global_step=episode, dataformats='CHW')
+            if episode in intervals:
+                avg_rewards = compute_avg_rewards(finished_pcb_list)
+                all_avg_rewards.append(avg_rewards)
+                plot_image = create_overlay_plot(all_avg_rewards, title=f"Avg Reward per Sequence Length up to Episode {episode}")
+                plot_tensor = torch.tensor(plot_image).permute(2, 0, 1)
+                writer.add_image('Average_Reward_Per_Sequence_Length', plot_tensor, global_step=episode, dataformats='CHW')
         except Exception as e:
             print(f"An error occurred during logging the overlay plot: {e}")
 
