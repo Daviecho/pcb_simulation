@@ -11,33 +11,34 @@ import os
 # Load environment variables from the .env file
 load_dotenv()
 
-# Load test_bonus parameters
-test_bonus_start = float(os.getenv("TEST_BONUS_START", 25))
-test_bonus_zero_progress = float(os.getenv("TEST_BONUS_ZERO_PROGRESS", 0.5))
-test_bonus_end = float(os.getenv("TEST_BONUS_END", -5))
-test_bonus_end_progress = float(os.getenv("TEST_BONUS_END_PROGRESS", 1.0))
-
-# Load recycle_bonus parameters
-recycle_bonus_start = float(os.getenv("RECYCLE_BONUS_START", -5))
-recycle_bonus_zero_progress = float(os.getenv("RECYCLE_BONUS_ZERO_PROGRESS", 0.4))
-recycle_bonus_end = float(os.getenv("RECYCLE_BONUS_END", 10))
-recycle_bonus_end_progress = float(os.getenv("RECYCLE_BONUS_END_PROGRESS", 0.8))
-
-# Load repair_bonus parameters
-repair_bonus_start = float(os.getenv("REPAIR_BONUS_START", -5))
-repair_bonus_zero_progress = float(os.getenv("REPAIR_BONUS_ZERO_PROGRESS", 0.4))
-repair_bonus_end = float(os.getenv("REPAIR_BONUS_END", 10))
-repair_bonus_end_progress = float(os.getenv("REPAIR_BONUS_END_PROGRESS", 0.8))
-
-# Load reuse_bonus parameters
-reuse_bonus_start = float(os.getenv("REUSE_BONUS_START", -5))
-reuse_bonus_zero_progress = float(os.getenv("REUSE_BONUS_ZERO_PROGRESS", 0.4))
-reuse_bonus_end = float(os.getenv("REUSE_BONUS_END", 10))
-reuse_bonus_end_progress = float(os.getenv("REUSE_BONUS_END_PROGRESS", 0.8))
-
 
 
 def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_actions=100, progress=0.0, finished_pcb_list=None):
+
+    # Load test_bonus parameters
+    test_bonus_start = float(os.getenv("TEST_BONUS_START", 25))
+    test_bonus_zero_progress = float(os.getenv("TEST_BONUS_ZERO_PROGRESS", 0.5))
+    test_bonus_end = float(os.getenv("TEST_BONUS_END", -5))
+    test_bonus_end_progress = float(os.getenv("TEST_BONUS_END_PROGRESS", 1.0))
+
+    # Load recycle_bonus parameters
+    recycle_bonus_start = float(os.getenv("RECYCLE_BONUS_START", -5))
+    recycle_bonus_zero_progress = float(os.getenv("RECYCLE_BONUS_ZERO_PROGRESS", 0.4))
+    recycle_bonus_end = float(os.getenv("RECYCLE_BONUS_END", 10))
+    recycle_bonus_end_progress = float(os.getenv("RECYCLE_BONUS_END_PROGRESS", 0.8))
+
+    # Load repair_bonus parameters
+    repair_bonus_start = float(os.getenv("REPAIR_BONUS_START", -5))
+    repair_bonus_zero_progress = float(os.getenv("REPAIR_BONUS_ZERO_PROGRESS", 0.4))
+    repair_bonus_end = float(os.getenv("REPAIR_BONUS_END", 10))
+    repair_bonus_end_progress = float(os.getenv("REPAIR_BONUS_END_PROGRESS", 0.8))
+
+    # Load reuse_bonus parameters
+    reuse_bonus_start = float(os.getenv("REUSE_BONUS_START", -5))
+    reuse_bonus_zero_progress = float(os.getenv("REUSE_BONUS_ZERO_PROGRESS", 0.4))
+    reuse_bonus_end = float(os.getenv("REUSE_BONUS_END", 10))
+    reuse_bonus_end_progress = float(os.getenv("REUSE_BONUS_END_PROGRESS", 0.8))
+
     total_time = 0
     test_sequence = []
     done = False
