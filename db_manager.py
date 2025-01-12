@@ -26,6 +26,7 @@ class DatabaseManager:
                 observed_state TEXT
             )
         """)
+        
         self.conn.commit()
 
     def insert_test_result(self, progress, pcb_id, test_sequence, total_time, profit, CumRew, real_state, finalstate, observed_state):
@@ -35,6 +36,9 @@ class DatabaseManager:
             VALUES (?, ?, ?, ?, ?, ?, ?,?,?)
         """, (progress, pcb_id,  test_sequence, total_time, profit, CumRew, real_state, finalstate, observed_state))
         self.conn.commit()
+
+    def insert_opt_run (data):
+        ...
 
     def fetch_all_results(self):
         cursor = self.conn.cursor()

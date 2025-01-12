@@ -14,18 +14,24 @@ from dotenv import load_dotenv  # Import dotenv to load environment variables
 import json
 import shutil
 import matplotlib.pyplot as plt
+# Disable interactive mode globally
+plt.ioff()
+
+
 import io
 # Load .env variables
 load_dotenv()
 
-# Load parameters from .env
-NUM_EPISODES = int(os.getenv("NUM_EPISODES", 100))
-HIDDEN_DIM = int(os.getenv("HIDDEN_DIM", 64))
-TENSORBOARD_FLUSH_SECS = int(os.getenv("TENSORBOARD_FLUSH_SECS", 120))
-RUNS_DIR = os.getenv("RUNS_DIR", "runs")
-MAX_NUM_IMAGES  = int(os.getenv("MAX_NUM_IMAGES", 10))
-
 def main_function():
+    # Load parameters from .env
+    NUM_EPISODES = int(os.getenv("NUM_EPISODES", 100))
+    HIDDEN_DIM = int(os.getenv("HIDDEN_DIM", 64))
+    TENSORBOARD_FLUSH_SECS = int(os.getenv("TENSORBOARD_FLUSH_SECS", 120))
+    RUNS_DIR = os.getenv("RUNS_DIR", "runs")
+    MAX_NUM_IMAGES  = int(os.getenv("MAX_NUM_IMAGES", 10))
+    SMOOTHING_FACTOR = float(os.getenv("SMOOTHING_FACTOR", 0.1)) # Adjust the smoothing factor (0 < SMOOTHING_FACTOR ≤ 1)
+    smoothed_profit = None  # Set to None initially      
+
     # Initialize SimPy environment and database manager
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -107,7 +113,7 @@ def main_function():
         episode_profit = sum(pcb['total_profit'] for pcb in finished_pcb_list)
         print(f"--- Episode {episode} Completed: Total Reward = {total_episode_reward} | Average Reward = {average_reward:.2f} | Total profit = {episode_profit:.2f} ---")
         print(f"Number of PCBs Processed: {len(finished_pcb_list)}")
-
+        
         # Log rewards to TensorBoard
 
         # Calculate the average length of test_sequence
@@ -183,6 +189,17 @@ def main_function():
             except Exception as e:
                 print(f"An error occurred during logging Q-Values/Average Q-Value: {e}")
 
+
+        if smoothed_profit is None:
+            # Initialize smoothed_profit with the first episode's profit
+            smoothed_profit = episode_profit
+        else:
+            # Update the smoothed profit using a weighted average
+            smoothed_profit = (
+                SMOOTHING_FACTOR * episode_profit +
+                (1 - SMOOTHING_FACTOR) * smoothed_profit
+        )
+
         # # Log gradients
         # for name, grad in agent.logging_data['gradients']:
         #     try:
@@ -212,7 +229,7 @@ def main_function():
 
     # Plot the learning curve
     #plot_learning_curve(rewards)
-    return np.mean(episode_profit)
+    return smoothed_profit
 
 
 def save_run_metadata(timestamp, agent, output_dir, env_file=".env"):
