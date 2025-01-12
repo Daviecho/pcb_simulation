@@ -61,7 +61,7 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
     cumulative_reward = 0
 
     #endprogress > zeroprogress > 0
-    test_bonus = linear_function(progress, test_bonus_start, test_bonus_zero_progress, test_bonus_end, test_bonus_end_progress)
+    #test_bonus = linear_function(progress, test_bonus_start, test_bonus_zero_progress, test_bonus_end, test_bonus_end_progress)
     recycle_bonus = linear_function(progress, recycle_bonus_start, recycle_bonus_zero_progress, recycle_bonus_end, recycle_bonus_end_progress)
     repair_bonus = linear_function(progress, repair_bonus_start, repair_bonus_zero_progress, repair_bonus_end, repair_bonus_end_progress)
     reuse_bonus = linear_function(progress, reuse_bonus_start, reuse_bonus_zero_progress, reuse_bonus_end, reuse_bonus_end_progress)
