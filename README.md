@@ -28,8 +28,8 @@ With this setup, the system dynamically learns the best inspection steps and rec
 ## Run
 1. **Clone the Repository**
     ```bash
-    git clone https://github.com/YourUsername/YourRepoName.git
-    cd YourRepoName
+    git clone https://github.com/Daviecho/pcb_simulation.git
+    cd pcb_simulation
     ```
 
 2. **Create & Activate a Virtual Environment (Optional)**
@@ -38,15 +38,18 @@ With this setup, the system dynamically learns the best inspection steps and rec
     source venv/bin/activate  # Windows: venv\Scripts\activate
     ```
 
-3. **Configure** your `.env` file (e.g., learning rate, gamma, episodes).
+3. **Configure** your `.env` file (e.g., episodes, num PCB per episode).
 
 4. **Run** the main script:
     ```bash
     python main.py
     ```
 
-5. **Monitor** training progress via console output or TensorBoard logs in `./runs`.
-
+5. **Monitor** training progress via console output or TensorBoard logs in `./tensorb`.
+    ```bash
+    tensorboard --logdir=tensorb
+    ```
+    
 ### Hyperparameter Optimization (Optuna)
 
 1. **Set** initial guesses in `.env` (or let the script define search ranges).
