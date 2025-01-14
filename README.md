@@ -1,9 +1,9 @@
-Welcome to this repository, where we explore a **Reinforcement Learning (RL)** approach to optimize electronic waste (e-waste) management. By modeling Printed Circuit Board Assemblies (PCBAs) as graphs and leveraging **Graph Neural Networks (GNNs)**, this project efficiently determines the most profitable recovery strategies—reuse, repair, recycle, or remanufacture. Additionally, **Optuna** is used for hyperparameter optimization, and a **`.env`** file centralizes important configuration parameters.
+Welcome to this repository, where we explore a **Reinforcement Learning (RL)** approach to optimize electronic waste (e-waste) management. By modeling Printed Circuit Board Assemblies (PCBAs) as graphs and leveraging **Graph Neural Networks (GNNs)**, this project efficiently determines the best inspection sequence (e.g. x-ray, visual inspection, flying probe) and, finally, the most profitable recovery strategies—reuse, repair, recycle, or remanufacture. Additionally, **Optuna** is used for hyperparameter optimization, and a **`.env`** file centralizes important configuration parameters.
 
 
 In the rapidly growing domain of e-waste, **optimizing inspection and recovery strategies** for PCBAs is pivotal. This project uses:
 - **Reinforcement Learning** for dynamic decision-making.
-- **Graph Neural Networks** to handle variable PCB structures.
+- **Graph Neural Networks** to handle variable PCB structures represented as graphs.
 - **Optuna** for automated hyperparameter tuning.
 - A **`.env`** file to manage crucial parameters (e.g., learning rate, buffer capacity) without hard-coding them.
 
@@ -19,11 +19,9 @@ With this setup, the system dynamically learns the best inspection steps and rec
 ---
 ## Installation - Prerequisites
 
-- **Python 3.8+**
+- **Python 3**
 
-- **PyTorch**, **Torch Geometric**, **SimPy**, **Optuna**
-
-- **Matplotlib**
+- **PyTorch**, **Torch Geometric**, **SimPy**, **Optuna**, **Matplotlib**
 
 ## Run
 1. **Clone the Repository**
@@ -49,7 +47,7 @@ With this setup, the system dynamically learns the best inspection steps and rec
     ```bash
     tensorboard --logdir=tensorb
     ```
-    
+
 ### Hyperparameter Optimization (Optuna)
 
 1. **Set** initial guesses in `.env` (or let the script define search ranges).
