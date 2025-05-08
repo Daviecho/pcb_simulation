@@ -15,56 +15,134 @@ OPT_STEPS = int(os.getenv("OPT_STEPS", 4))
 
 def objective(trial):
     # Suggest piecewise parameters for test bonus as an example
-# Suggest piecewise parameters for X-Ray
-    xray_zero = trial.suggest_float("xray_bonus_zero_progress", 0.01, 0.9)
-    xray_end_prog = trial.suggest_float("xray_bonus_end_progress", xray_zero + 0.01, 1.0)
+    # Agent Hyperparameters
+    lr = trial.suggest_float("lr", 1e-5, 1e-2, log=True)
+    gamma = trial.suggest_float("gamma", 0.9, 0.999)
+    epsilon_decay = trial.suggest_int("epsilon_decay", 5000, 50000) # Adjust range based on total steps
+    batch_size = trial.suggest_categorical("batch_size", [32, 64, 128, 256])
+    buffer_capacity = trial.suggest_int("buffer_capacity", 10000, 100000)
+    hidden_dim_agent = trial.suggest_categorical("hidden_dim_agent", [32, 64, 128, 256]) # For the agent's GNN or FC layers
 
-    # Suggest piecewise parameters for Visual Inspection
-    visual_zero = trial.suggest_float("visual_bonus_zero_progress", 0.01, 0.9)
-    visual_end_prog = trial.suggest_float("visual_bonus_end_progress", visual_zero + 0.01, 1.0)
+    # Suggest piecewise parameters for X-Ray Bonus
+    xray_bonus_zero_progress = trial.suggest_float("xray_bonus_zero_progress", 0.01, 0.9)
+    xray_bonus_end_progress = trial.suggest_float("xray_bonus_end_progress", xray_bonus_zero_progress + 0.01, 1.0)
+    xray_bonus_start = trial.suggest_float("xray_bonus_start", -20, 50)
+    xray_bonus_end = trial.suggest_float("xray_bonus_end", -30, 30)
 
-    # Suggest piecewise parameters for Flying Probe
-    flying_zero = trial.suggest_float("flying_probe_bonus_zero_progress", 0.01, 0.9)
-    flying_end_prog = trial.suggest_float("flying_probe_bonus_end_progress", flying_zero + 0.01, 1.0)
+    # Suggest piecewise parameters for Visual Inspection Bonus
+    visual_bonus_zero_progress = trial.suggest_float("visual_bonus_zero_progress", 0.01, 0.9)
+    visual_bonus_end_progress = trial.suggest_float("visual_bonus_end_progress", visual_bonus_zero_progress + 0.01, 1.0)
+    visual_bonus_start = trial.suggest_float("visual_bonus_start", -20, 40)
+    visual_bonus_end = trial.suggest_float("visual_bonus_end", -30, 20)
 
-        # Set environment variables
-    #os.environ["XRAY_BONUS_START"] = str(xray_start)
-    os.environ["XRAY_BONUS_ZERO_PROGRESS"] = str(xray_zero)
-    #os.environ["XRAY_BONUS_END"] = str(xray_end)
-    os.environ["XRAY_BONUS_END_PROGRESS"] = str(xray_end_prog)
+    # Suggest piecewise parameters for Flying Probe Bonus
+    flying_probe_bonus_zero_progress = trial.suggest_float("flying_probe_bonus_zero_progress", 0.01, 0.9)
+    flying_probe_bonus_end_progress = trial.suggest_float("flying_probe_bonus_end_progress", flying_probe_bonus_zero_progress + 0.01, 1.0)
+    flying_probe_bonus_start = trial.suggest_float("flying_probe_bonus_start", -20, 50)
+    flying_probe_bonus_end = trial.suggest_float("flying_probe_bonus_end", -30, 30)
+    
+    # Suggest piecewise parameters for Recycle Bonus
+    recycle_bonus_zero_progress = trial.suggest_float("recycle_bonus_zero_progress", 0.01, 0.9)
+    recycle_bonus_end_progress = trial.suggest_float("recycle_bonus_end_progress", recycle_bonus_zero_progress + 0.01, 1.0)
+    recycle_bonus_start = trial.suggest_float("recycle_bonus_start", -20, 30)
+    recycle_bonus_end = trial.suggest_float("recycle_bonus_end", -30, 40)
 
-    #os.environ["VISUAL_BONUS_START"] = str(visual_start)
-    os.environ["VISUAL_BONUS_ZERO_PROGRESS"] = str(visual_zero)
-    #os.environ["VISUAL_BONUS_END"] = str(visual_end)
-    os.environ["VISUAL_BONUS_END_PROGRESS"] = str(visual_end_prog)
+    # Suggest piecewise parameters for Repair Bonus
+    repair_bonus_zero_progress = trial.suggest_float("repair_bonus_zero_progress", 0.01, 0.9)
+    repair_bonus_end_progress = trial.suggest_float("repair_bonus_end_progress", repair_bonus_zero_progress + 0.01, 1.0)
+    repair_bonus_start = trial.suggest_float("repair_bonus_start", -20, 30)
+    repair_bonus_end = trial.suggest_float("repair_bonus_end", -30, 40)
 
-    #os.environ["FLYING_PROBE_BONUS_START"] = str(flying_start)
-    os.environ["FLYING_PROBE_BONUS_ZERO_PROGRESS"] = str(flying_zero)
-    #os.environ["FLYING_PROBE_BONUS_END"] = str(flying_end)
-    os.environ["FLYING_PROBE_BONUS_END_PROGRESS"] = str(flying_end_prog)
+    # Suggest piecewise parameters for Reuse Bonus
+    reuse_bonus_zero_progress = trial.suggest_float("reuse_bonus_zero_progress", 0.01, 0.9)
+    reuse_bonus_end_progress = trial.suggest_float("reuse_bonus_end_progress", reuse_bonus_zero_progress + 0.01, 1.0)
+    reuse_bonus_start = trial.suggest_float("reuse_bonus_start", -20, 50)
+    reuse_bonus_end = trial.suggest_float("reuse_bonus_end", -30, 50)
 
-    hidden_dim = trial.suggest_int("hidden_dim", 8, 128)
-    os.environ["HIDDEN_DIM"] = str(hidden_dim)
-    # Repeat for recycle, repair, reuse if you want those optimized as well
+    # GNN Model hidden dimension (if different from agent's general hidden_dim or if you have a separate GNN model)
+    # The existing code had "HIDDEN_DIM". If this is for the GNN specifically:
+    gnn_hidden_dim = trial.suggest_int("gnn_hidden_dim", 8, 128) 
 
 
+    # Set environment variables for the main_function call
+    os.environ["AGENT_LR"] = str(lr)
+    os.environ["AGENT_GAMMA"] = str(gamma)
+    os.environ["AGENT_EPSILON_DECAY"] = str(epsilon_decay)
+    os.environ["AGENT_BATCH_SIZE"] = str(batch_size)
+    os.environ["AGENT_BUFFER_CAPACITY"] = str(buffer_capacity)
+    os.environ["AGENT_HIDDEN_DIM"] = str(hidden_dim_agent) # Assuming agent uses this
 
+    os.environ["XRAY_BONUS_ZERO_PROGRESS"] = str(xray_bonus_zero_progress)
+    os.environ["XRAY_BONUS_END_PROGRESS"] = str(xray_bonus_end_progress)
+    os.environ["XRAY_BONUS_START"] = str(xray_bonus_start)
+    os.environ["XRAY_BONUS_END"] = str(xray_bonus_end)
+    
+    os.environ["VISUAL_BONUS_ZERO_PROGRESS"] = str(visual_bonus_zero_progress)
+    os.environ["VISUAL_BONUS_END_PROGRESS"] = str(visual_bonus_end_progress)
+    os.environ["VISUAL_BONUS_START"] = str(visual_bonus_start)
+    os.environ["VISUAL_BONUS_END"] = str(visual_bonus_end)
 
-    # Prepare hyperparameters as a dictionary
+    os.environ["FLYING_PROBE_BONUS_ZERO_PROGRESS"] = str(flying_probe_bonus_zero_progress)
+    os.environ["FLYING_PROBE_BONUS_END_PROGRESS"] = str(flying_probe_bonus_end_progress)
+    os.environ["FLYING_PROBE_BONUS_START"] = str(flying_probe_bonus_start)
+    os.environ["FLYING_PROBE_BONUS_END"] = str(flying_probe_bonus_end)
+
+    os.environ["RECYCLE_BONUS_ZERO_PROGRESS"] = str(recycle_bonus_zero_progress)
+    os.environ["RECYCLE_BONUS_END_PROGRESS"] = str(recycle_bonus_end_progress)
+    os.environ["RECYCLE_BONUS_START"] = str(recycle_bonus_start)
+    os.environ["RECYCLE_BONUS_END"] = str(recycle_bonus_end)
+
+    os.environ["REPAIR_BONUS_ZERO_PROGRESS"] = str(repair_bonus_zero_progress)
+    os.environ["REPAIR_BONUS_END_PROGRESS"] = str(repair_bonus_end_progress)
+    os.environ["REPAIR_BONUS_START"] = str(repair_bonus_start)
+    os.environ["REPAIR_BONUS_END"] = str(repair_bonus_end)
+
+    os.environ["REUSE_BONUS_ZERO_PROGRESS"] = str(reuse_bonus_zero_progress)
+    os.environ["REUSE_BONUS_END_PROGRESS"] = str(reuse_bonus_end_progress)
+    os.environ["REUSE_BONUS_START"] = str(reuse_bonus_start)
+    os.environ["REUSE_BONUS_END"] = str(reuse_bonus_end)
+    
+    os.environ["GNN_HIDDEN_DIM"] = str(gnn_hidden_dim) # If GNN model uses this
+
+    # Prepare hyperparameters as a dictionary for saving
     parameters = {
-        #"xray_bonus_start": xray_start,
-        "xray_bonus_zero_progress": xray_zero,
-        #"xray_bonus_end": xray_end,
-        "xray_bonus_end_progress": xray_end_prog,
-        #"visual_bonus_start": visual_start,
-        "visual_bonus_zero_progress": visual_zero,
-        #"visual_bonus_end": visual_end,
-        "visual_bonus_end_progress": visual_end_prog,
-        #"flying_probe_bonus_start": flying_start,
-        "flying_probe_bonus_zero_progress": flying_zero,
-        #"flying_probe_bonus_end": flying_end,
-        "flying_probe_bonus_end_progress": flying_end_prog,
-        "HIDDEN_DIM": hidden_dim
+        "lr": lr,
+        "gamma": gamma,
+        "epsilon_decay": epsilon_decay,
+        "batch_size": batch_size,
+        "buffer_capacity": buffer_capacity,
+        "hidden_dim_agent": hidden_dim_agent,
+        "gnn_hidden_dim": gnn_hidden_dim,
+
+        "xray_bonus_zero_progress": xray_bonus_zero_progress,
+        "xray_bonus_end_progress": xray_bonus_end_progress,
+        "xray_bonus_start": xray_bonus_start,
+        "xray_bonus_end": xray_bonus_end,
+
+        "visual_bonus_zero_progress": visual_bonus_zero_progress,
+        "visual_bonus_end_progress": visual_bonus_end_progress,
+        "visual_bonus_start": visual_bonus_start,
+        "visual_bonus_end": visual_bonus_end,
+
+        "flying_probe_bonus_zero_progress": flying_probe_bonus_zero_progress,
+        "flying_probe_bonus_end_progress": flying_probe_bonus_end_progress,
+        "flying_probe_bonus_start": flying_probe_bonus_start,
+        "flying_probe_bonus_end": flying_probe_bonus_end,
+
+        "recycle_bonus_zero_progress": recycle_bonus_zero_progress,
+        "recycle_bonus_end_progress": recycle_bonus_end_progress,
+        "recycle_bonus_start": recycle_bonus_start,
+        "recycle_bonus_end": recycle_bonus_end,
+
+        "repair_bonus_zero_progress": repair_bonus_zero_progress,
+        "repair_bonus_end_progress": repair_bonus_end_progress,
+        "repair_bonus_start": repair_bonus_start,
+        "repair_bonus_end": repair_bonus_end,
+
+        "reuse_bonus_zero_progress": reuse_bonus_zero_progress,
+        "reuse_bonus_end_progress": reuse_bonus_end_progress,
+        "reuse_bonus_start": reuse_bonus_start,
+        "reuse_bonus_end": reuse_bonus_end,
     }
     
     # Run the training. Make sure main_function() returns a numeric metric.

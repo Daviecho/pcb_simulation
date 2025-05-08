@@ -64,8 +64,20 @@ def main_function():
     node_feature_dim = len(sample_pcb.get_graph()[0][0])  # Number of features per node
     output_dim = len(actions)  # Total number of possible actions
 
-    # Initialize the RL agent
-    agent = DQNAgent(node_feature_dim, HIDDEN_DIM, output_dim, writer=writer)
+    AGENT_LR = float(os.getenv("AGENT_LR", 0.0001))
+    AGENT_GAMMA = float(os.getenv("AGENT_GAMMA", 0.99))
+    AGENT_EPSILON_DECAY = int(os.getenv("AGENT_EPSILON_DECAY", 15000))
+
+    # Initialize the RL agent with Optuna/Env hyperparameters
+    agent = DQNAgent(
+        node_feature_dim,
+        HIDDEN_DIM,
+        output_dim,
+        writer=writer,
+        lr=AGENT_LR,
+        gamma=AGENT_GAMMA,
+        epsilon_decay=AGENT_EPSILON_DECAY,
+    )
     decision_system = Decision_System(agent, actions, None)  # Assuming no GNN model is needed here
 
     # Save metadata

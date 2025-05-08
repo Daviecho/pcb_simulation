@@ -13,6 +13,8 @@ load_dotenv()
 
 
 MAX_ACTIONS = int(os.getenv("MAX_ACTIONS", 50))
+REPLAY_BUFFER_WARMUP_STEPS = int(os.getenv("REPLAY_BUFFER_WARMUP_STEPS", 500)) # Example value
+
 def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_actions=100, progress=0.0, finished_pcb_list=None):
 
     xray_bonus_start = float(os.getenv("XRAY_BONUS_START", 25))
@@ -75,7 +77,7 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         available_actions = []
         # Avoid repeating the same measurement
         executed_tests = [action.target.name for action in actions if action.action_type == "test" and action.target.name in test_sequence]
-        for idx, action in enumerate(actions): #currently a measurement can only be done once! Maybe we should 
+        for idx, action in enumerate(actions): #currently a measurement can only be done once!
             # if action.action_type == "test" and action.target.name in executed_tests:
             #     continue
             available_actions.append(idx)
@@ -84,7 +86,14 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         action_idx = decision_system.select_next_action(pcb, available_actions)
         action = actions[action_idx]
         test_sequence.append(action.target.name)
+
         available_actions.remove(action_idx)
+        # The following line might cause issues if action_idx is not guaranteed to be in available_actions
+        # if action_idx in available_actions: # Add a check if necessary
+        #    available_actions.remove(action_idx)
+        # However, select_next_action should return an index from available_actions.
+        # If select_next_action returns the action object itself, then you'd need to find its index.
+        # Assuming select_next_action returns the index as it is currently used.
 
         state = pcb.clone()
 
@@ -99,21 +108,22 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
             # Strategy action
             if action.target.name == "Recycle":
                 # Income plus dynamic bonus
-                reward = recycle_bonus
+                reward = recycle_bonus # Only bonus, income is handled by pcb.current_profit
             elif action.target.name == "Repair":
-                reward = result.get("income", 0) + repair_bonus
+                reward = result.get("income", 0) + repair_bonus # Income from result + bonus
             elif action.target.name == "Reuse":
-                reward = result.get("income", 0) + reuse_bonus
+                reward = result.get("income", 0) + reuse_bonus # Income from result + bonus
             else: #should never be hit currently
                 # Reuse or other strategies
                 reward = result.get("income", 0)
 
-            pcb.current_profit += result.get("income", 0)
+            pcb.current_profit += result.get("income", 0) # Ensure income is added to profit
             done = True
         else:
             cost = result.get("cost", 0)
             pcb.current_profit -= cost 
-            reward = measurement_bonuses[action.target.name] - cost
+            applied_measurement_bonus = measurement_bonuses.get(action.target.name, 0) # Use .get for safety
+            reward = applied_measurement_bonus - cost
 
 
         # For RL, collect transition and store in replay buffer
@@ -128,8 +138,13 @@ def pcb_process(env, pcb, actions, db, decision_system, agent, rewards, max_acti
         done_flag = done
         agent.replay_buffer.push(state, action_idx, reward, next_state, done_flag)
         
-        # Optimize the agent
-        agent.optimize_model()
+        # Optimize the agent only after the buffer has enough samples (warm-up)
+        if len(agent.replay_buffer) > REPLAY_BUFFER_WARMUP_STEPS: # Use the new constant
+            agent.optimize_model()
+        
+        # It seems rewards.append(cumulative_reward) is intended to track rewards per step/action for this PCB
+        # If so, it should be inside the loop. If it's for total reward per PCB, it should be outside.
+        # Given its current placement, it logs cumulative reward after each step.
         rewards.append(cumulative_reward)
 
         # Print final log for this PCB

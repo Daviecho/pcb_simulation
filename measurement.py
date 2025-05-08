@@ -31,17 +31,29 @@ class Measurement:
         if we detect something, or leaves them if we detect nothing.
         """
         if detected_defect:
-            # Shift probability distribution
-            for defect in component.observed_state.keys():
+            # Normalize probabilities after adjustment to ensure they sum to 1
+            total_adjustment_away = 0
+            num_other_defects = 0
+
+            # Tentatively update probabilities
+            new_probs = component.observed_state.copy()
+
+            for defect in new_probs.keys():
                 if defect == detected_defect:
-                    component.observed_state[defect] = min(
-                        1.0, component.observed_state[defect] + alpha
-                    )
+                    new_probs[defect] = min(1.0, new_probs[defect] + alpha)
                 else:
-                    component.observed_state[defect] = max(
-                        0.0,
-                        component.observed_state[defect] - alpha
-                    )
+                    # Reduce other probabilities proportionally or by a fraction of alpha
+                    # This is a simple approach; more sophisticated Bayesian updates could be used
+                    reduction = alpha / (len(new_probs) - 1) if len(new_probs) > 1 else 0
+                    new_probs[defect] = max(0.0, new_probs[defect] - reduction)
+                    num_other_defects +=1
+            
+            # Normalize to ensure probabilities sum to 1
+            current_sum = sum(new_probs.values())
+            if current_sum > 0:
+                for defect in new_probs.keys():
+                    new_probs[defect] = new_probs[defect] / current_sum
+            component.observed_state = new_probs
 
     def log_observed_state(self, pcb, component, old_probs, real_defect, detected_defect):
         """
