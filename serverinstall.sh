@@ -7,17 +7,17 @@
 
 # Install SimPy
 echo "Installing ..."
-pip install simpy
+pip install --break-system-packages simpy
 
 echo "Installing PyTorch Geometric..."
-pip install torch torchvision torchaudio
-pip install torch-geometric
-pip install python-dotenv
+pip install --break-system-packages torch torchvision torchaudio
+pip install --break-system-packages torch-geometric
+pip install --break-system-packages python-dotenv
 
 # Install TensorBoard
-pip install tensorboard
-pip install optuna
-pip install matplotlib
+pip install --break-system-packages tensorboard
+pip install --break-system-packages optuna
+pip install --break-system-packages matplotlib
 
 # git clone https://github.com/Daviecho/pcb_simulation.git
 
