@@ -1,0 +1,17 @@
+name: sim-env
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - simpy
+      - torch
+      - torchvision
+      - torchaudio
+      - torch-geometric
+      - python-dotenv
+      - tensorboard
+      - optuna
+      - matplotlib

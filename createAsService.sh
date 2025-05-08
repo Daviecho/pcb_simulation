@@ -30,6 +30,7 @@ Description=Run my Python script as a service
 After=network.target
 
 [Service]
+User=ubuntu
 ExecStart=/usr/bin/python3 $SCRIPT_PATH
 WorkingDirectory=$WORKING_DIR
 Restart=no

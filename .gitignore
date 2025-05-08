@@ -6,3 +6,4 @@ runs/**
 tensorb/**
 opt/**
 images/**
+__pycache__/**

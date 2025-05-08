@@ -7,6 +7,7 @@
 
 # Install SimPy
 echo "Installing ..."
+sudo apt install python3-pip -y
 pip install --break-system-packages simpy
 
 echo "Installing PyTorch Geometric..."
@@ -26,7 +27,7 @@ chmod +x opt.py
 
 echo "Installation script completed."
 #scp -r ubuntu@sdm:~/pcb_simulation/tensorb .
-# tensorboard --logdir=runs
+# tensorboard --logdir=runs --bind_all
 
 #What I tried to make CUDA work
 # sudo apt purge '^nvidia-.*'
